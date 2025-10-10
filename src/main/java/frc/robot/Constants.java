@@ -33,8 +33,8 @@ public final class Constants {
     public static final int climbId = 25;
 
     public static final double fastSpeed =1 ;
-    public static final double slowSpeed = 0.3;
-    public static final double normalSpeed = 0.3;
+    public static final double slowSpeed = 0.7;
+    public static final double normalSpeed = 0.7;
     public static final double kElDeadBand = 3;
   
   }

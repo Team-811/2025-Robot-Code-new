@@ -9,7 +9,7 @@ import frc.robot.commands.AprilTagAim;
 // import frc.robot.commands.AlgieArmCommand;
 import frc.robot.commands.Autos;
 import frc.robot.commands.IntakeCommand;
-// import frc.robot.commands.L1x1andBack;
+import frc.robot.commands.L1x1andBack;
 import frc.robot.commands.elevatorCommand;
 // import frc.robot.commands.getHorizontalOffset;
 import frc.robot.commands.reverseIntakeCommand;
@@ -21,8 +21,8 @@ import frc.robot.commands.toFloor;
 import frc.robot.commands.cDown;
 import frc.robot.commands.cL1x1;
 import frc.robot.commands.cL4x1;
-// import frc.robot.commands.cL4x2;
-// import frc.robot.commands.cL4x3;
+import frc.robot.commands.cL4x2;
+import frc.robot.commands.cL4x3;
 import frc.robot.commands.cMid;
 import frc.robot.commands.cSpinTogether;
 import frc.robot.commands.coralArmCommand;
@@ -139,12 +139,12 @@ public class RobotContainer {
     // autoChooser.addOption("midL4x1", "midL4x1");
     // autoChooser.addOption("midL1x1", "midL1x1");
     // autoChooser.addOption("sideL4x1", "sideL4x1");
-    // autoChooser.addOption("sideL1x1", "sideL1x1");
+    autoChooser.addOption("sideL1x1",  new cL4x3(el, drivetrain, rolly, "sideL1x1", coralArmm));
     // autoChooser.addOption("Ex Auto", "Ex Auto");
     autoChooser.addOption("Ex Auto", new PathPlannerAuto("Ex Auto"));
     
     // autoChooser.addOption("sideC_L4x2", "sideC_L4x2");
-    // autoChooser.addOption("try", "try");
+    autoChooser.addOption("try", new L1x1andBack(el, drivetrain, rolly, "try", coralArmm));
 
 
     SmartDashboard.putData("autoChooser",autoChooser);
@@ -333,7 +333,7 @@ public double speedScale(){
       // case "try":
       // auto = new L1x1andBack(el, drivetrain, rolly, Choice, coralArmm);
       // break;
-      
+
 
     return autoChooser.getSelected();
 
