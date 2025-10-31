@@ -318,7 +318,7 @@ public double speedScale(){
     Command auto;
     switch (Choice.getName()) {
       // case "midL4x1":
-      //   auto=new cL4x1(el, drivetrain, rolly, Choice, coralArmm);
+      //   auto=new cL4x1(el, drivetrain rolly, Choice, coralArmm);
       //   break;
       case "midL1x1":
         auto = new cL1x1(el, drivetrain, rolly, Choice.getName(), coralArmm);
