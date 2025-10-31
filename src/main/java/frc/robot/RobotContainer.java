@@ -127,24 +127,24 @@ public class RobotContainer {
       private final SendableChooser<Command> autoChooser;
       // private final SendableChooser<String> autoChooser;
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
-  public RobotContainer() {
+  public RobotContainer(){
     // Configure the trigger bindings
     configureBindings();
 
-    // autoChooser = AutoBuilder.buildAutoChooser("midL4x1");
-    autoChooser= new SendableChooser<Command>();
+    autoChooser = AutoBuilder.buildAutoChooser("midL4x1");
+    // autoChooser= new SendableChooser<Command>();
     // autoChooser= new SendableChooser<String>();
-    autoChooser.setDefaultOption("midL4x1", new cL1x1(el, drivetrain, rolly, "midL4x1", coralArmm));
+    autoChooser.setDefaultOption("midL4x1", new cL1x1(el, drivetrain, rolly, "midL4x1", coralArmm));//use this
     autoChooser.addOption("midL4x1", new cL1x1(el, drivetrain, rolly, "midL4x1", coralArmm));
     // autoChooser.addOption("midL4x1", "midL4x1");
     // autoChooser.addOption("midL1x1", "midL1x1");
     // autoChooser.addOption("sideL4x1", "sideL4x1");
-    autoChooser.addOption("sideL1x1",  new cL4x3(el, drivetrain, rolly, "sideL1x1", coralArmm));
+    // autoChooser.addOption("sideL1x1",  new cL4x3(el, drivetrain, rolly, "sideL1x1", coralArmm));
     // autoChooser.addOption("Ex Auto", "Ex Auto");
     autoChooser.addOption("Ex Auto", new PathPlannerAuto("Ex Auto"));
     
     // autoChooser.addOption("sideC_L4x2", "sideC_L4x2");
-    autoChooser.addOption("try", new L1x1andBack(el, drivetrain, rolly, "try", coralArmm));
+    // autoChooser.addOption("try", new L1x1andBack(el, drivetrain, rolly, "try", coralArmm));
 
 
     SmartDashboard.putData("autoChooser",autoChooser);
@@ -314,28 +314,31 @@ public double speedScale(){
   public Command getAutonomousCommand() {
     // An example command will be run in autonomous
     // return new PathPlannerAuto("Ex Auto");
-    // Command Choice = autoChooser.getSelected();
-    // Command auto;
-    // switch (Choice.getName()) {
-    //   case "midL4x1":
-    //     // auto=new cL4x1(el, drivetrain, rolly, Choice, coralArmm);
-    //     // break;
-    //   case "midL1x1":
-    //     auto = new cL1x1(el, drivetrain, rolly, Choice.getName(), coralArmm);
-    //     break;
+    Command Choice = autoChooser.getSelected();
+    Command auto;
+    switch (Choice.getName()) {
+      // case "midL4x1":
+      //   auto=new cL4x1(el, drivetrain, rolly, Choice, coralArmm);
+      //   break;
+      case "midL1x1":
+        auto = new cL1x1(el, drivetrain, rolly, Choice.getName(), coralArmm);
+        break;
       // case "sideL4x1":
       // auto = new cL4x2(el, drivetrain, rolly, Choice, coralArmm);
 
       // break;
-      // case "sideL1x1":
-      // auto = new cL4x3(el, drivetrain, rolly, Choice, coralArmm);
-      // break;
+      case "sideL1x1":
+      auto = new cL4x3(el, drivetrain, rolly, Choice.getName(), coralArmm);
+      break;
+      default:
+      auto = new PathPlannerAuto("Ex Auto");
+      break;
       // case "try":
       // auto = new L1x1andBack(el, drivetrain, rolly, Choice, coralArmm);
       // break;
-
-
+    }
     return autoChooser.getSelected();
-
+    // return auto;
+    
   }
 }
