@@ -38,6 +38,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class LimelightHelpers {
 
+    private LimelightHelpers() {}
+
+    // Cache NT entries so repeated getters avoid re-looking up table topics.
     private static final Map<String, DoubleArrayEntry> doubleArrayEntries = new ConcurrentHashMap<>();
 
     /**
@@ -608,7 +611,8 @@ public class LimelightHelpers {
     }
 
 
-    private static ObjectMapper mapper;
+    private static final ObjectMapper mapper =
+        new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     /**
      * Print JSON Parse time to the console in milliseconds
@@ -616,7 +620,7 @@ public class LimelightHelpers {
     static boolean profileJSON = false;
 
     static final String sanitizeName(String name) {
-        if (name == "" || name == null) {
+        if (name == null || name.isBlank()) {
             return "limelight";
         }
         return name;
@@ -1625,9 +1629,6 @@ public class LimelightHelpers {
 
         long start = System.nanoTime();
         LimelightHelpers.LimelightResults results = new LimelightHelpers.LimelightResults();
-        if (mapper == null) {
-            mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        }
 
         try {
             results = mapper.readValue(getJSONDump(limelightName), LimelightResults.class);
@@ -1645,3 +1646,8 @@ public class LimelightHelpers {
         return results;
     }
 }
+
+
+
+
+

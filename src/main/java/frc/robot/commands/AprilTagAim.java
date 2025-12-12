@@ -1,6 +1,6 @@
 // // package frc.robot.commands;
 // // import frc.robot.subsystems.CommandSwerveDrivetrain;
-// // import frc.robot.subsystems.limelight;
+// // import frc.robot.subsystems.Limelight;
 
 // // import com.ctre.phoenix6.swerve.SwerveRequest;
 
@@ -9,12 +9,12 @@
 // // import static edu.wpi.first.units.Units.*;
 
 // // public class AprilTagAim extends Command {
-// //   private final limelight limee;
+// //   private final Limelight limee;
 // //   private final CommandSwerveDrivetrain drivetrainie;
 // //   Timer timer;
 // //   private final double stopDistanceMeters = 0.70;  
 // //   private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond);
-// //   public AprilTagAim(limelight lime, CommandSwerveDrivetrain drivetrain) {
+// //   public AprilTagAim(Limelight lime, CommandSwerveDrivetrain drivetrain) {
 // //     // Use addRequirements() here to declare subsystem dependencies.
    
 // //    limee = lime;
@@ -98,7 +98,7 @@
 // package frc.robot.commands;
 
 // import frc.robot.subsystems.CommandSwerveDrivetrain;
-// import frc.robot.subsystems.limelight;
+// import frc.robot.subsystems.Limelight;
 
 // import com.ctre.phoenix6.swerve.SwerveRequest;
 
@@ -109,7 +109,7 @@
 
 // public class AprilTagAim extends Command {
 
-//   private final limelight limee;
+//   private final Limelight limee;
 //   private final CommandSwerveDrivetrain drivetrainie;
 //   private final Timer timer = new Timer();
 
@@ -118,7 +118,7 @@
 
 //   private final double stopDistanceMeters = 0.1;  // <<< set target distance
 
-//   public AprilTagAim(limelight lime, CommandSwerveDrivetrain drivetrain) {
+//   public AprilTagAim(Limelight lime, CommandSwerveDrivetrain drivetrain) {
 //     limee = lime;
 //     drivetrainie = drivetrain;
 //     addRequirements(drivetrainie);
@@ -189,7 +189,7 @@
 package frc.robot.commands;
 
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.subsystems.limelight;
+import frc.robot.subsystems.Limelight;
 
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
@@ -200,7 +200,7 @@ import static edu.wpi.first.units.Units.*;
 
 public class AprilTagAim extends Command {
 
-  private final limelight limee;
+  private final Limelight limee;
   private final CommandSwerveDrivetrain drivetrainie;
   private final Timer timer = new Timer();
 
@@ -211,7 +211,7 @@ public class AprilTagAim extends Command {
   // <<< EXACT 1 FOOT (0.3048 meters)
   private final double stopDistanceMeters = 0.3048;
 
-  public AprilTagAim(limelight lime, CommandSwerveDrivetrain drivetrain) {
+  public AprilTagAim(Limelight lime, CommandSwerveDrivetrain drivetrain) {
     limee = lime;
     drivetrainie = drivetrain;
     addRequirements(drivetrainie);
@@ -284,3 +284,4 @@ public class AprilTagAim extends Command {
     return aligned || timer.hasElapsed(2.0);
   }
 }
+
