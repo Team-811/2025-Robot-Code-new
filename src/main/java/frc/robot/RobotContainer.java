@@ -7,30 +7,31 @@ package frc.robot;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.AprilTagAim;
 // import frc.robot.commands.AlgieArmCommand;
-import frc.robot.commands.Autos;
-import frc.robot.commands.IntakeCommand;
-import frc.robot.commands.L1x1andBack;
-import frc.robot.commands.elevatorCommand;
+// import frc.robot.commands.Autos;
+// import frc.robot.commands.IntakeCommand;
+// import frc.robot.commands.L1x1andBack;
+// import frc.robot.commands.elevatorCommand;
+import frc.robot.commands.limeStartTarget;
 // import frc.robot.commands.getHorizontalOffset;
-import frc.robot.commands.reverseIntakeCommand;
+// import frc.robot.commands.reverseIntakeCommand;
 // import frc.robot.commands.sideC_L4x2;
-import frc.robot.commands.slowRolly;
-import frc.robot.commands.toFloor;
+// import frc.robot.commands.slowRolly;
+// import frc.robot.commands.toFloor;
 // import frc.robot.commands.aDown;
 // import frc.robot.commands.aUp;
-import frc.robot.commands.cDown;
-import frc.robot.commands.cL1x1;
-import frc.robot.commands.cL4x1;
-import frc.robot.commands.cL4x2;
-import frc.robot.commands.cL4x3;
-import frc.robot.commands.cMid;
-import frc.robot.commands.cSpinTogether;
-import frc.robot.commands.coralArmCommand;
-import frc.robot.commands.toL1;
-import frc.robot.commands.toL2;
-import frc.robot.commands.toL3;
-import frc.robot.commands.toL4;
-import frc.robot.commands.cUp;
+// import frc.robot.commands.cDown;
+// import frc.robot.commands.cL1x1;
+// import frc.robot.commands.cL4x1;
+// import frc.robot.commands.cL4x2;
+// import frc.robot.commands.cL4x3;
+// import frc.robot.commands.cMid;
+// import frc.robot.commands.cSpinTogether;
+// import frc.robot.commands.coralArmCommand;
+// import frc.robot.commands.toL1;
+// import frc.robot.commands.toL2;
+// import frc.robot.commands.toL3;
+// import frc.robot.commands.toL4;
+// import frc.robot.commands.cUp;
 // import frc.robot.commands.climberCommand;
 // import frc.robot.commands.climberDescend;
 // import frc.robot.commands.climberRise;
@@ -38,7 +39,7 @@ import frc.robot.commands.cUp;
 import frc.robot.generated.TunerConstants;
 // import frc.robot.subsystems.AlgieArm;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.subsystems.Elevator;
+// import frc.robot.subsystems.Elevator;
 
 import com.ctre.phoenix6.mechanisms.swerve.LegacySwerveRequest.FieldCentric;
 import com.ctre.phoenix6.swerve.SwerveRequest;
@@ -66,13 +67,13 @@ import java.nio.file.Path;
 import com.pathplanner.lib.auto.AutoBuilder;
 
 import frc.robot.subsystems.limelight;
-import frc.robot.subsystems.rollerClaw;
+// import frc.robot.subsystems.rollerClaw;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 
 // import frc.robot.subsystems.aClaw;
-import frc.robot.subsystems.cArm;
-import frc.robot.subsystems.cClaw;
+// import frc.robot.subsystems.cArm;
+// import frc.robot.subsystems.cClaw;
 // import frc.robot.subsystems.climber;
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -83,14 +84,14 @@ import frc.robot.subsystems.cClaw;
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
         private double speed = OperatorConstants.kSpeed;
-        public static cClaw climbOpen = new cClaw();
+        // public static cClaw climbOpen = new cClaw();
       //  public static aClaw alClaw = new aClaw();
         private final limelight lime = new limelight();
-        private final Elevator el = new Elevator();
+        // private final Elevator el = new Elevator();
       //  private final AlgieArm alArm = new AlgieArm();
-      private final cArm coralArmm = new cArm();
+      // private final cArm coralArmm = new cArm();
       // private final climber climb = new climber();
-      private final rollerClaw rolly= new rollerClaw();
+      // private final rollerClaw rolly= new rollerClaw();
             private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond)* OperatorConstants.kSpeed; // kSpeedAt12Volts desired top speed
             private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
         
@@ -118,7 +119,7 @@ public class RobotContainer {
           private final PhoenixPIDController steerController = new PhoenixPIDController(3, 0, 0.05);
           private final PhoenixPIDController steerController180 = new PhoenixPIDController(0.3, 0.001, 0.01);
           private final SwerveRequest.RobotCentric forwardStraight = new SwerveRequest.RobotCentric().withDriveRequestType(DriveRequestType.OpenLoopVoltage);
-
+        // drivetrain.addVisionMeasurement();
 
   // Replace with CommandPS4Controller or CommandJoystick if needed
   private final CommandXboxController driverController =
@@ -134,8 +135,8 @@ public class RobotContainer {
     autoChooser = AutoBuilder.buildAutoChooser("midL4x1");
     // autoChooser= new SendableChooser<Command>();
     // autoChooser= new SendableChooser<String>();
-    autoChooser.setDefaultOption("midL4x1", new cL1x1(el, drivetrain, rolly, "midL4x1", coralArmm));//use this
-    autoChooser.addOption("midL4x1", new cL1x1(el, drivetrain, rolly, "midL4x1", coralArmm));
+    // autoChooser.setDefaultOption("midL4x1", new cL1x1(el, drivetrain, rolly, "midL4x1", coralArmm));//use this
+    // autoChooser.addOption("midL4x1", new cL1x1(el, drivetrain, rolly, "midL4x1", coralArmm));
     // autoChooser.addOption("midL4x1", "midL4x1");
     // autoChooser.addOption("midL1x1", "midL1x1");
     // autoChooser.addOption("sideL4x1", "sideL4x1");
@@ -172,21 +173,27 @@ public class RobotContainer {
         )
     );
     
-    el.setDefaultCommand(new elevatorCommand(el));
+    // el.setDefaultCommand(new elevatorCommand(el));
     // alArm.setDefaultCommand(new AlgieArmCommand(alArm));
-    coralArmm.setDefaultCommand(new coralArmCommand(coralArmm));
+    // coralArmm.setDefaultCommand(new coralArmCommand(coralArmm));
     // climb.setDefaultCommand(new climberCommand(climb));
 
-    driverController.rightBumper().whileTrue(drivetrain.applyRequest(()->robotCentric
-      .withVelocityX(slewLimY.calculate(joyLeftY())*MaxSpeed*speedScale())
-      .withVelocityY(slewLimX.calculate(-joyLeftX())*MaxSpeed*speedScale())//-joyLeftX()
-      .withRotationalRate(slewLimRote.calculate(-joyRightX())* MaxAngularRate)
-      ).ignoringDisable(true));
-      driverController.leftBumper().whileTrue(drivetrain.applyRequest(()->robotCentric
-      .withVelocityX(slewLimY.calculate(limeY())*MaxSpeed*speedScale())//loyLeftY
-      .withVelocityY(slewLimX.calculate(limeX())*MaxSpeed*speedScale())//-joyLeftX()
-      .withRotationalRate(slewLimRoteLime.calculate(limeYaw())/60)//-jotRightX
-      ).ignoringDisable(true));
+    // driverController.rightBumper().whileTrue(drivetrain.applyRequest(()->robotCentric
+    //   .withVelocityX(slewLimY.calculate(joyLeftY())*MaxSpeed*speedScale())
+    //   .withVelocityY(slewLimX.calculate(-joyLeftX())*MaxSpeed*speedScale())//-joyLeftX()
+    //   .withRotationalRate(slewLimRote.calculate(-joyRightX())* MaxAngularRate)
+    //   ).ignoringDisable(true));
+      // driverController.leftBumper().whileTrue(drivetrain.applyRequest(()->robotCentric
+      // .withVelocityX(slewLimY.calculate(limeY())*MaxSpeed*speedScale())//loyLeftY
+      // .withVelocityY(slewLimX.calculate(limeX())*MaxSpeed*speedScale())//-joyLeftX()
+      // .withRotationalRate(slewLimRoteLime.calculate(limeYaw())/60)//-jotRightX
+      // ).ignoringDisable(true));
+      driverController.rightTrigger().onTrue(
+    new limeStartTarget(lime, drivetrain)
+      );
+      driverController.leftTrigger().onTrue(
+        new AprilTagAim(lime, drivetrain)
+          );
 
 
       // driverController.leftTrigger().whileTrue(drivetrain.applyRequest(()->robotCentric
@@ -194,12 +201,12 @@ public class RobotContainer {
       // .withVelocityY(slewLimX.calculate(limeX_Left())*MaxSpeed*speedScale())//-joyLeftX()
       // .withRotationalRate(slewLimRoteLime.calculate(limeYaw())/60)//-jotRightX
       // ).ignoringDisable(true));
-      driverController.leftTrigger().whileTrue(new AprilTagAim(lime, drivetrain));
-      driverController.rightTrigger().whileTrue(drivetrain.applyRequest(()->robotCentric
-      .withVelocityX(slewLimY.calculate(limeY())*MaxSpeed*speedScale())//loyLeftY
-      .withVelocityY(slewLimX.calculate(limeX_Right())*MaxSpeed*speedScale())//-joyLeftX()
-      .withRotationalRate(slewLimRoteLime.calculate(limeYaw())/60)//-jotRightX
-      ).ignoringDisable(true));
+      // driverController.leftTrigger().whileTrue(new AprilTagAim(lime, drivetrain));
+      // driverController.rightTrigger().whileTrue(drivetrain.applyRequest(()->robotCentric
+      // .withVelocityX(slewLimY.calculate(limeY())*MaxSpeed*speedScale())//loyLeftY
+      // .withVelocityY(slewLimX.calculate(limeX_Right())*MaxSpeed*speedScale())//-joyLeftX()
+      // .withRotationalRate(slewLimRoteLime.calculate(limeYaw())/60)//-jotRightX
+      // ).ignoringDisable(true));
 
 
 
@@ -223,34 +230,34 @@ public class RobotContainer {
     //     OpController.rightTrigger().whileTrue(new InstantCommand(()->corClaw.turn()));
         // OpController.x().whileTrue(new InstantCommand(()->alClaw.closeClawA()));
 
-    driverController.back().whileTrue(new toFloor(el));
+    // driverController.back().whileTrue(new toFloor(el));
 
-        driverController.a().whileTrue(new toL1(el));
-        driverController.x().whileTrue(new toL2(el));
-        driverController.y().whileTrue(new toL3(el));
-        driverController.b().whileTrue(new toL4(el));
+    //     driverController.a().whileTrue(new toL1(el));
+    //     driverController.x().whileTrue(new toL2(el));
+    //     driverController.y().whileTrue(new toL3(el));
+    //     driverController.b().whileTrue(new toL4(el));
       // driverController.b().whileTrue(new getHorizontalOffset());
 
       // driverController.a().whileTrue(new InstantCommand(()->lime.getMeasureX()));
       // driverController.b().whileTrue(new InstantCommand(()->lime.getMeasureY()));
       
-      OpController.leftTrigger().whileTrue(new IntakeCommand(rolly));
-      OpController.rightTrigger().whileTrue(new reverseIntakeCommand(rolly));
+      // OpController.leftTrigger().whileTrue(new IntakeCommand(rolly));
+      // OpController.rightTrigger().whileTrue(new reverseIntakeCommand(rolly));
 
 
-      OpController.leftBumper().whileTrue(new cUp(coralArmm)); 
+      // OpController.leftBumper().whileTrue(new cUp(coralArmm)); 
 
-      OpController.rightBumper().whileTrue(new cDown(coralArmm));
+      // OpController.rightBumper().whileTrue(new cDown(coralArmm));
 
-      OpController.b().whileTrue(new cMid(coralArmm));
+      // OpController.b().whileTrue(new cMid(coralArmm));
       // OpController.y().whileTrue(new climberDescend(climb));
       // OpController.a().whileTrue(new climberRise(climb));
-      OpController.x().whileTrue(new slowRolly(rolly));
+      // OpController.x().whileTrue(new slowRolly(rolly));
     
       // OpController.a().whileTrue(new aUp(alArm));
       // OpController.y().whileTrue(new aDown(alArm));
-      OpController.start().whileTrue(new cSpinTogether(rolly));
-      OpController.back().whileTrue(new InstantCommand(()->climbOpen.open()));
+      // OpController.start().whileTrue(new cSpinTogether(rolly));
+      // OpController.back().whileTrue(new InstantCommand(()->climbOpen.open()));
       
     drivetrain.registerTelemetry(logger::telemeterize);  
 
@@ -280,15 +287,15 @@ public double limeX(){
   double limeLeftX = lime.getX();
   return limeLeftX;
 }
-public double limeYaw(){
-  double limeRightx = lime.getYaw();
-  return limeRightx;
-}
-public double limeY(){
+// public double limeYaw(){
+//   double limeRightx = lime.getYaw();
+//   return limeRightx;
+// }
+// public double limeY(){
 
-  double limeleftY = lime.getV()*0.5;
-  return limeleftY;
-}
+//   double limeleftY = lime.getV()*0.5;
+//   return limeleftY;
+// }
 public double limeX_Left(){
   double limeXLeft = lime.getLeftX();
   return limeXLeft;
@@ -314,31 +321,32 @@ public double speedScale(){
   public Command getAutonomousCommand() {
     // An example command will be run in autonomous
     // return new PathPlannerAuto("Ex Auto");
-    Command Choice = autoChooser.getSelected();
-    Command auto;
-    switch (Choice.getName()) {
-      // case "midL4x1":
-      //   auto=new cL4x1(el, drivetrain rolly, Choice, coralArmm);
-      //   break;
-      case "midL1x1":
-        auto = new cL1x1(el, drivetrain, rolly, Choice.getName(), coralArmm);
-        break;
-      // case "sideL4x1":
-      // auto = new cL4x2(el, drivetrain, rolly, Choice, coralArmm);
+    // Command Choice = autoChooser.getSelected();
+    // Command auto;
+    // switch (Choice.getName()) {
+    //   // case "midL4x1":
+    //   //   auto=new cL4x1(el, drivetrain rolly, Choice, coralArmm);
+    //   //   break;
+    //   case "midL1x1":
+    //     auto = new cL1x1(el, drivetrain, rolly, Choice.getName(), coralArmm);
+    //     break;
+    //   // case "sideL4x1":
+    //   // auto = new cL4x2(el, drivetrain, rolly, Choice, coralArmm);
 
-      // break;
-      case "sideL1x1":
-      auto = new cL4x3(el, drivetrain, rolly, Choice.getName(), coralArmm);
-      break;
-      default:
-      auto = new PathPlannerAuto("Ex Auto");
-      break;
-      // case "try":
-      // auto = new L1x1andBack(el, drivetrain, rolly, Choice, coralArmm);
-      // break;
-    }
-    return autoChooser.getSelected();
+    //   // break;
+    //   case "sideL1x1":
+    //   auto = new cL4x3(el, drivetrain, rolly, Choice.getName(), coralArmm);
+    //   break;
+    //   default:
+    //   auto = new PathPlannerAuto("Ex Auto");
+    //   break;
+    //   // case "try":
+    //   // auto = new L1x1andBack(el, drivetrain, rolly, Choice, coralArmm);
+    //   // break;
+    // }
+    // return autoChooser.getSelected();
     // return auto;
+    return null;
     
   }
 }
