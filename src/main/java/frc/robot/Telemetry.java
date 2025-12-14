@@ -1,5 +1,13 @@
 package frc.robot;
 
+/*
+ * File Overview: Publishes drivetrain telemetry to NetworkTables, SmartDashboard, and SignalLogger.
+ * Features/Details:
+ * - Accepts SwerveDriveState snapshots and outputs pose, speeds, module states/targets/positions, timestamps, and odometry frequency.
+ * - Builds Mechanism2d visuals for each module and publishes Field2d-like pose arrays for dashboards.
+ * - Logs pose and module state arrays via SignalLogger for offline analysis.
+ * - Includes normalized visual speed clamping to keep dashboard widgets readable.
+ */
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
 
@@ -21,11 +29,13 @@ import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 
 public class Telemetry {
+    // Current implementation assumes a 4-module swerve; adjust MODULE_COUNT if drivetrain changes.
+    private static final int MODULE_COUNT = 4;
     private final double MaxSpeed;
 
     /**
-     * Construct a telemetry object, with the specified max speed of the robot
-     * 
+     * Construct a telemetry object, with the specified max speed of the robot.
+     *
      * @param maxSpeed Maximum speed in meters per second
      */
     public Telemetry(double maxSpeed) {
@@ -52,37 +62,35 @@ public class Telemetry {
     private final StringPublisher fieldTypePub = table.getStringTopic(".type").publish();
 
     /* Mechanisms to represent the swerve module states */
-    private final Mechanism2d[] m_moduleMechanisms = new Mechanism2d[] {
-        new Mechanism2d(1, 1),
-        new Mechanism2d(1, 1),
-        new Mechanism2d(1, 1),
-        new Mechanism2d(1, 1),
-    };
+    private final Mechanism2d[] m_moduleMechanisms = new Mechanism2d[MODULE_COUNT];
     /* A direction and length changing ligament for speed representation */
-    private final MechanismLigament2d[] m_moduleSpeeds = new MechanismLigament2d[] {
-        m_moduleMechanisms[0].getRoot("RootSpeed", 0.5, 0.5).append(new MechanismLigament2d("Speed", 0.5, 0)),
-        m_moduleMechanisms[1].getRoot("RootSpeed", 0.5, 0.5).append(new MechanismLigament2d("Speed", 0.5, 0)),
-        m_moduleMechanisms[2].getRoot("RootSpeed", 0.5, 0.5).append(new MechanismLigament2d("Speed", 0.5, 0)),
-        m_moduleMechanisms[3].getRoot("RootSpeed", 0.5, 0.5).append(new MechanismLigament2d("Speed", 0.5, 0)),
-    };
+    private final MechanismLigament2d[] m_moduleSpeeds = new MechanismLigament2d[MODULE_COUNT];
     /* A direction changing and length constant ligament for module direction */
-    private final MechanismLigament2d[] m_moduleDirections = new MechanismLigament2d[] {
-        m_moduleMechanisms[0].getRoot("RootDirection", 0.5, 0.5)
-            .append(new MechanismLigament2d("Direction", 0.1, 0, 0, new Color8Bit(Color.kWhite))),
-        m_moduleMechanisms[1].getRoot("RootDirection", 0.5, 0.5)
-            .append(new MechanismLigament2d("Direction", 0.1, 0, 0, new Color8Bit(Color.kWhite))),
-        m_moduleMechanisms[2].getRoot("RootDirection", 0.5, 0.5)
-            .append(new MechanismLigament2d("Direction", 0.1, 0, 0, new Color8Bit(Color.kWhite))),
-        m_moduleMechanisms[3].getRoot("RootDirection", 0.5, 0.5)
-            .append(new MechanismLigament2d("Direction", 0.1, 0, 0, new Color8Bit(Color.kWhite))),
-    };
+    private final MechanismLigament2d[] m_moduleDirections = new MechanismLigament2d[MODULE_COUNT];
 
     private final double[] m_poseArray = new double[3];
-    private final double[] m_moduleStatesArray = new double[8];
-    private final double[] m_moduleTargetsArray = new double[8];
+    private final double[] m_moduleStatesArray = new double[MODULE_COUNT * 2];
+    private final double[] m_moduleTargetsArray = new double[MODULE_COUNT * 2];
+
+    {
+        // Build the Mechanism2d visuals for each module once during construction.
+        for (int i = 0; i < MODULE_COUNT; i++) {
+            m_moduleMechanisms[i] = new Mechanism2d(1, 1);
+            m_moduleSpeeds[i] = m_moduleMechanisms[i]
+                .getRoot("RootSpeed", 0.5, 0.5)
+                .append(new MechanismLigament2d("Speed", 0.5, 0));
+            m_moduleDirections[i] = m_moduleMechanisms[i]
+                .getRoot("RootDirection", 0.5, 0.5)
+                .append(new MechanismLigament2d("Direction", 0.1, 0, 0, new Color8Bit(Color.kWhite)));
+        }
+    }
 
     /** Accept the swerve drive state and telemeterize it to SmartDashboard and SignalLogger. */
     public void telemeterize(SwerveDriveState state) {
+        if (state == null || state.ModuleStates.length < MODULE_COUNT || state.ModuleTargets.length < MODULE_COUNT) {
+            return;
+        }
+
         /* Telemeterize the swerve drive state */
         drivePose.set(state.Pose);
         driveSpeeds.set(state.Speeds);
@@ -96,11 +104,11 @@ public class Telemetry {
         m_poseArray[0] = state.Pose.getX();
         m_poseArray[1] = state.Pose.getY();
         m_poseArray[2] = state.Pose.getRotation().getDegrees();
-        for (int i = 0; i < 4; ++i) {
-            m_moduleStatesArray[i*2 + 0] = state.ModuleStates[i].angle.getRadians();
-            m_moduleStatesArray[i*2 + 1] = state.ModuleStates[i].speedMetersPerSecond;
-            m_moduleTargetsArray[i*2 + 0] = state.ModuleTargets[i].angle.getRadians();
-            m_moduleTargetsArray[i*2 + 1] = state.ModuleTargets[i].speedMetersPerSecond;
+        for (int i = 0; i < MODULE_COUNT; ++i) {
+            m_moduleStatesArray[i * 2] = state.ModuleStates[i].angle.getRadians();
+            m_moduleStatesArray[i * 2 + 1] = state.ModuleStates[i].speedMetersPerSecond;
+            m_moduleTargetsArray[i * 2] = state.ModuleTargets[i].angle.getRadians();
+            m_moduleTargetsArray[i * 2 + 1] = state.ModuleTargets[i].speedMetersPerSecond;
         }
 
         SignalLogger.writeDoubleArray("DriveState/Pose", m_poseArray);
@@ -113,10 +121,14 @@ public class Telemetry {
         fieldPub.set(m_poseArray);
 
         /* Telemeterize the module states to a Mechanism2d */
-        for (int i = 0; i < 4; ++i) {
+        for (int i = 0; i < MODULE_COUNT; ++i) {
+            // Clamp the visual speed length so Mechanism2d stays readable.
+            double normalizedSpeed = Math.min(
+                Math.abs(state.ModuleStates[i].speedMetersPerSecond / (2 * MaxSpeed)),
+                1.0);
             m_moduleSpeeds[i].setAngle(state.ModuleStates[i].angle);
             m_moduleDirections[i].setAngle(state.ModuleStates[i].angle);
-            m_moduleSpeeds[i].setLength(state.ModuleStates[i].speedMetersPerSecond / (2 * MaxSpeed));
+            m_moduleSpeeds[i].setLength(normalizedSpeed);
 
             SmartDashboard.putData("Module " + i, m_moduleMechanisms[i]);
         }

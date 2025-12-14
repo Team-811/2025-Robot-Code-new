@@ -1,352 +1,239 @@
 // Copyright (c) FIRST and other WPILib contributors.
 // Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
+// the WPILib BSD license file in the root directory of this project
+// Controller Guide — Driver Xbox
+//     Left stick: strafe (X/Y field-centric), 
+//     Right stick X: rotate; deadbands 0.1.
+//
+// Speed modes: Modes shown on dashboard as Drive/SpeedMode.
+//  * Right bumper   = Slow   (0.5)
+//  * Left bumper    = Fast   (1.0) 
+//  * Neither        = Normal (0.8) 
+//     
+// Limelight Modes:
+//   * Right trigger: CenterToTagOneMeter (drive to 1m from AprilTag, face it).
+//   * Left trigger: AprilTagAim (approach to 0.3048m, auto aim/drive to tag).
+//   * How to use them:
+//        Make sure the Limelight is on the AprilTag pipeline with LEDs on so tv goes true.
+//        Aim the camera roughly toward the tag; if the tag isn’t in view, the robot will not move.
+//        Hold the chosen trigger:
+//          You retain control only when not holding the trigger; while held, the command drives the swerve.
+//          The command exits when the distance target is reached or the tag is lost.
+//          Release the trigger to return to normal field-centric driving.
+//        Behavior details:
+//          Both commands gate on hasTarget(): no target → robot commands zero velocity for safety.
+//          CenterToTagOneMeter uses a simple P controller to hit 1 m, centering X and yaw.
+//          AprilTagAim ramps speed down within ~0.5 m of the goal to avoid overshoot and stops at 1 ft.
+//          Neither handles pipeline/LED switching—ensure the correct pipeline/LED state before use.
+//        Best practices:
+//          Use right trigger first for a controlled staging position; use left trigger when you need to get close/precise.
+//          If the robot isn’t moving, check the dashboard Limelight/HasTarget and pipeline/LEDs; 
+//          the commands won’t drive without a valid tag.
+//
+// Start button: reseed field-centric heading.
+// Start + Y (held): SysId quasistatic forward on drivetrain.
+// Start + X (held): SysId quasistatic reverse on drivetrain.
+// 
+// Notes:
+// Default command is field-centric drive; MaxSpeed is scaled by kSpeed=1.0.
+// SysId bindings require robot in a safe state; they override normal driving while held.
+// Limelight: Targeting is enabled/disabled inside the aim commands; 
+//            Ensure the tag pipeline is active and LEDs on when using triggers.
 
 package frc.robot;
 
+/*
+ * File Overview: Central wiring hub for subsystems, commands, and driver controls.
+ * Features/Details:
+ * - Creates drivetrain (CTRE swerve), Limelight, telemetry logger, and autonomous chooser.
+ * - Defines driver Xbox bindings: field-centric default drive, speed modes via bumpers, vision assists on triggers, SysId on start+X/Y.
+ * - Applies joystick deadbands/slew rate limiting and speed scaling for smooth control.
+ * - Publishes driver-facing telemetry (speed mode/scale, joystick values, pose, velocities) to SmartDashboard.
+ * - Seeds field-centric heading at startup and registers drivetrain telemetry streaming.
+ */
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.AprilTagAim;
-// import frc.robot.commands.AlgieArmCommand;
-// import frc.robot.commands.Autos;
-// import frc.robot.commands.IntakeCommand;
-// import frc.robot.commands.L1x1andBack;
-// import frc.robot.commands.elevatorCommand;
-import frc.robot.commands.limeStartTarget;
-// import frc.robot.commands.getHorizontalOffset;
-// import frc.robot.commands.reverseIntakeCommand;
-// import frc.robot.commands.sideC_L4x2;
-// import frc.robot.commands.slowRolly;
-// import frc.robot.commands.toFloor;
-// import frc.robot.commands.aDown;
-// import frc.robot.commands.aUp;
-// import frc.robot.commands.cDown;
-// import frc.robot.commands.cL1x1;
-// import frc.robot.commands.cL4x1;
-// import frc.robot.commands.cL4x2;
-// import frc.robot.commands.cL4x3;
-// import frc.robot.commands.cMid;
-// import frc.robot.commands.cSpinTogether;
-// import frc.robot.commands.coralArmCommand;
-// import frc.robot.commands.toL1;
-// import frc.robot.commands.toL2;
-// import frc.robot.commands.toL3;
-// import frc.robot.commands.toL4;
-// import frc.robot.commands.cUp;
-// import frc.robot.commands.climberCommand;
-// import frc.robot.commands.climberDescend;
-// import frc.robot.commands.climberRise;
-
+import frc.robot.commands.CenterToTagOneMeter;
 import frc.robot.generated.TunerConstants;
-// import frc.robot.subsystems.AlgieArm;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-// import frc.robot.subsystems.Elevator;
+import frc.robot.subsystems.Limelight;
 
-import com.ctre.phoenix6.mechanisms.swerve.LegacySwerveRequest.FieldCentric;
 import com.ctre.phoenix6.swerve.SwerveRequest;
-import com.ctre.phoenix6.swerve.SwerveRequest.RobotCentric;
-import com.ctre.phoenix6.swerve.utility.PhoenixPIDController;
-import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.pathplanner.lib.commands.PathPlannerAuto;
+import com.pathplanner.lib.auto.AutoBuilder;
 
 import edu.wpi.first.math.filter.SlewRateLimiter;
-
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
-
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-
-import static edu.wpi.first.units.Units.*;
-
-import java.nio.file.Path;
-
-import com.pathplanner.lib.auto.AutoBuilder;
-
-import frc.robot.subsystems.limelight;
-// import frc.robot.subsystems.rollerClaw;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
-
-// import frc.robot.subsystems.aClaw;
-// import frc.robot.subsystems.cArm;
-// import frc.robot.subsystems.cClaw;
-// import frc.robot.subsystems.climber;
-/**
- * This class is where the bulk of the robot should be declared. Since Command-based is a
- * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
- * periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
- * subsystems, commands, and trigger mappings) should be declared here.
- */
+import static edu.wpi.first.units.Units.*;
 public class RobotContainer {
-  // The robot's subsystems and commands are defined here...
-        private double speed = OperatorConstants.kSpeed;
-        // public static cClaw climbOpen = new cClaw();
-      //  public static aClaw alClaw = new aClaw();
-        private final limelight lime = new limelight();
-        // private final Elevator el = new Elevator();
-      //  private final AlgieArm alArm = new AlgieArm();
-      // private final cArm coralArmm = new cArm();
-      // private final climber climb = new climber();
-      // private final rollerClaw rolly= new rollerClaw();
-            private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond)* OperatorConstants.kSpeed; // kSpeedAt12Volts desired top speed
-            private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
-        
-            /* Setting up bindings for necessary control of the swerve drive platform */
-            private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-                    .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
-                    .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
-            private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
-            private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
-        
-            private final Telemetry logger = new Telemetry(MaxSpeed);
-              private SlewRateLimiter slewLimY = new SlewRateLimiter(1.5);
-          private SlewRateLimiter slewLimX = new SlewRateLimiter(1.5);
-          private SlewRateLimiter slewLimRote = new SlewRateLimiter(1.5);
-          private SlewRateLimiter slewLimRoteLime = new SlewRateLimiter(1.5);
-        
-          private final RobotCentric robotCentric = new SwerveRequest.RobotCentric()
-            .withDeadband(MaxSpeed*0.05).withRotationalDeadband(MaxAngularRate*0.1)
-            .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
-            private final CommandXboxController OpController = new CommandXboxController(OperatorConstants.kOpControllerPort);
-            public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-          
-          private final SwerveRequest.FieldCentricFacingAngle driveFacing = new SwerveRequest.FieldCentricFacingAngle()
-              .withDeadband(MaxSpeed * 0.05).withDriveRequestType(DriveRequestType.OpenLoopVoltage);
-          private final PhoenixPIDController steerController = new PhoenixPIDController(3, 0, 0.05);
-          private final PhoenixPIDController steerController180 = new PhoenixPIDController(0.3, 0.001, 0.01);
-          private final SwerveRequest.RobotCentric forwardStraight = new SwerveRequest.RobotCentric().withDriveRequestType(DriveRequestType.OpenLoopVoltage);
-        // drivetrain.addVisionMeasurement();
+  private final Limelight lime = new Limelight();
 
-  // Replace with CommandPS4Controller or CommandJoystick if needed
+  // Base speed scaling constants for the swerve (meters/sec and radians/sec).
+  private final double MaxSpeed =
+      TunerConstants.kSpeedAt12Volts.in(MetersPerSecond) * OperatorConstants.kSpeed;
+  private final double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond);
+
+  // Swerve request object reused by driver bindings.
+  private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
+      .withDeadband(MaxSpeed * 0.1)
+      .withRotationalDeadband(MaxAngularRate * 0.1)
+      .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
+
+  private final Telemetry logger = new Telemetry(MaxSpeed);
+
+  // Slew limiters tame acceleration in each axis/rotation to keep the robot smooth.
+  private final SlewRateLimiter slewLimY = new SlewRateLimiter(2.0);
+  private final SlewRateLimiter slewLimX = new SlewRateLimiter(2.0);
+  private final SlewRateLimiter slewLimRote = new SlewRateLimiter(1.0);
+
+  public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+
+  // Driver controls (single Xbox assumed for drivetrain + vision assist).
   private final CommandXboxController driverController =
       new CommandXboxController(OperatorConstants.kDriverControllerPort);
 
-      private final SendableChooser<Command> autoChooser;
-      // private final SendableChooser<String> autoChooser;
+  private final SendableChooser<Command> autoChooser;
+
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
-  public RobotContainer(){
-    // Configure the trigger bindings
+  public RobotContainer() {
+    // Seed heading at startup so field-centric drive has a sane reference.
+    drivetrain.seedFieldCentric();
     configureBindings();
+    publishStaticTelemetry();
 
+    // Build a PathPlanner-backed autonomous chooser and expose it to SmartDashboard.
     autoChooser = AutoBuilder.buildAutoChooser("midL4x1");
-    // autoChooser= new SendableChooser<Command>();
-    // autoChooser= new SendableChooser<String>();
-    // autoChooser.setDefaultOption("midL4x1", new cL1x1(el, drivetrain, rolly, "midL4x1", coralArmm));//use this
-    // autoChooser.addOption("midL4x1", new cL1x1(el, drivetrain, rolly, "midL4x1", coralArmm));
-    // autoChooser.addOption("midL4x1", "midL4x1");
-    // autoChooser.addOption("midL1x1", "midL1x1");
-    // autoChooser.addOption("sideL4x1", "sideL4x1");
-    // autoChooser.addOption("sideL1x1",  new cL4x3(el, drivetrain, rolly, "sideL1x1", coralArmm));
-    // autoChooser.addOption("Ex Auto", "Ex Auto");
+    autoChooser.setDefaultOption("Do Nothing", new InstantCommand());
     autoChooser.addOption("Ex Auto", new PathPlannerAuto("Ex Auto"));
-    
-    // autoChooser.addOption("sideC_L4x2", "sideC_L4x2");
-    // autoChooser.addOption("try", new L1x1andBack(el, drivetrain, rolly, "try", coralArmm));
-
-
-    SmartDashboard.putData("autoChooser",autoChooser);
-    
+    SmartDashboard.putData("autoChooser", autoChooser);
   }
 
-  /**
-   * Use this method to define your trigger->command mappings. Triggers can be created via the
-   * {@link Trigger#Trigger(java.util.function.BooleanSupplier)} constructor with an arbitrary
-   * predicate, or via the named factories in {@link
-   * edu.wpi.first.wpilibj2.command.button.CommandGenericHID}'s subclasses for {@link
-   * CommandXboxController Xbox}/{@link edu.wpi.first.wpilibj2.command.button.CommandPS4Controller
-   * PS4} controllers or {@link edu.wpi.first.wpilibj2.command.button.CommandJoystick Flight
-   * joysticks}.
-   */
+  /** Define driver -> command mappings. */
   private void configureBindings() {
-    
-    driveFacing.HeadingController = steerController;
+    // Default command: field-centric drive with slew-limited joystick input.
     drivetrain.setDefaultCommand(
-        // Drivetrain will execute this command periodically
-        drivetrain.applyRequest(() ->
-            drive.withVelocityX(slewLimY.calculate(joyLeftY())* MaxSpeed*speedScale()) // Drive forward with negative Y (forward)
-                .withVelocityY(slewLimX.calculate(joyLeftX()) * MaxSpeed*speedScale()) // Drive left with negative X (left)
-                .withRotationalRate(slewLimRote.calculate(-joyRightX())* MaxAngularRate) // Drive counterclockwise with negative X (left)
-        )
-    );
-    
-    // el.setDefaultCommand(new elevatorCommand(el));
-    // alArm.setDefaultCommand(new AlgieArmCommand(alArm));
-    // coralArmm.setDefaultCommand(new coralArmCommand(coralArmm));
-    // climb.setDefaultCommand(new climberCommand(climb));
+        drivetrain.applyRequest(
+            () ->
+                drive.withVelocityX(slewLimY.calculate(joyLeftY()) * MaxSpeed * speedScale())
+                    .withVelocityY(slewLimX.calculate(joyLeftX()) * MaxSpeed * speedScale())
+                    .withRotationalRate(slewLimRote.calculate(-joyRightX()) * MaxAngularRate)));
 
-    // driverController.rightBumper().whileTrue(drivetrain.applyRequest(()->robotCentric
-    //   .withVelocityX(slewLimY.calculate(joyLeftY())*MaxSpeed*speedScale())
-    //   .withVelocityY(slewLimX.calculate(-joyLeftX())*MaxSpeed*speedScale())//-joyLeftX()
-    //   .withRotationalRate(slewLimRote.calculate(-joyRightX())* MaxAngularRate)
-    //   ).ignoringDisable(true));
-      // driverController.leftBumper().whileTrue(drivetrain.applyRequest(()->robotCentric
-      // .withVelocityX(slewLimY.calculate(limeY())*MaxSpeed*speedScale())//loyLeftY
-      // .withVelocityY(slewLimX.calculate(limeX())*MaxSpeed*speedScale())//-joyLeftX()
-      // .withRotationalRate(slewLimRoteLime.calculate(limeYaw())/60)//-jotRightX
-      // ).ignoringDisable(true));
-      driverController.rightTrigger().onTrue(
-    new limeStartTarget(lime, drivetrain)
-      );
-      driverController.leftTrigger().onTrue(
-        new AprilTagAim(lime, drivetrain)
-          );
+    // Vision-assisted align/target commands.
+    driverController.rightTrigger().onTrue(new CenterToTagOneMeter(lime, drivetrain));
+    driverController.leftTrigger().onTrue(new AprilTagAim(lime, drivetrain));
 
+    // SysId bindings to characterize drivetrain when requested.
+    driverController.start().and(driverController.y())
+        .whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
+    driverController.start().and(driverController.x())
+        .whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
+    driverController.start().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
-      // driverController.leftTrigger().whileTrue(drivetrain.applyRequest(()->robotCentric
-      // .withVelocityX(slewLimY.calculate(limeY())*MaxSpeed*speedScale())//loyLeftY
-      // .withVelocityY(slewLimX.calculate(limeX_Left())*MaxSpeed*speedScale())//-joyLeftX()
-      // .withRotationalRate(slewLimRoteLime.calculate(limeYaw())/60)//-jotRightX
-      // ).ignoringDisable(true));
-      // driverController.leftTrigger().whileTrue(new AprilTagAim(lime, drivetrain));
-      // driverController.rightTrigger().whileTrue(drivetrain.applyRequest(()->robotCentric
-      // .withVelocityX(slewLimY.calculate(limeY())*MaxSpeed*speedScale())//loyLeftY
-      // .withVelocityY(slewLimX.calculate(limeX_Right())*MaxSpeed*speedScale())//-joyLeftX()
-      // .withRotationalRate(slewLimRoteLime.calculate(limeYaw())/60)//-jotRightX
-      // ).ignoringDisable(true));
-
-
-
-    // Schedule `exampleMethodCommand` when the Xbox controller's B button is pressed,
-    // cancelling on release.
-    // driverController.leftTrigger().whileTrue(drivetrain.applyRequest(() -> brake));
-    // driverController.b().whileTrue(drivetrain.applyRequest(() ->
-    //     point.withModuleDirection(new Rotation2d(-driverController.getLeftY(), -driverController.getLeftX()))
-    // ));
-    // OpController.back().onChange(new InstantCommand(()->System.out.println(drivetrain.getPigeon2()), drivetrain));
-    
-    // driverController.rightBumper().whileTrue(new InstantCommand(()->speed= OperatorConstants.fastSpeed));
-    // driverController.leftBumper().whileTrue(new InstantCommand(()->speed= OperatorConstants.slowSpeed));
-    // driverController.back().and(driverController.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-    // driverController.back().and(driverController.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-    driverController.start().and(driverController.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-    driverController.start().and(driverController.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
-    driverController.start().onTrue(drivetrain.runOnce(()-> drivetrain.seedFieldCentric()));
-
-    //  OpController.leftTrigger().whileTrue(new InstantCommand(()->corClaw.solenoidToggle()));//opens close
-    //     OpController.rightTrigger().whileTrue(new InstantCommand(()->corClaw.turn()));
-        // OpController.x().whileTrue(new InstantCommand(()->alClaw.closeClawA()));
-
-    // driverController.back().whileTrue(new toFloor(el));
-
-    //     driverController.a().whileTrue(new toL1(el));
-    //     driverController.x().whileTrue(new toL2(el));
-    //     driverController.y().whileTrue(new toL3(el));
-    //     driverController.b().whileTrue(new toL4(el));
-      // driverController.b().whileTrue(new getHorizontalOffset());
-
-      // driverController.a().whileTrue(new InstantCommand(()->lime.getMeasureX()));
-      // driverController.b().whileTrue(new InstantCommand(()->lime.getMeasureY()));
-      
-      // OpController.leftTrigger().whileTrue(new IntakeCommand(rolly));
-      // OpController.rightTrigger().whileTrue(new reverseIntakeCommand(rolly));
-
-
-      // OpController.leftBumper().whileTrue(new cUp(coralArmm)); 
-
-      // OpController.rightBumper().whileTrue(new cDown(coralArmm));
-
-      // OpController.b().whileTrue(new cMid(coralArmm));
-      // OpController.y().whileTrue(new climberDescend(climb));
-      // OpController.a().whileTrue(new climberRise(climb));
-      // OpController.x().whileTrue(new slowRolly(rolly));
-    
-      // OpController.a().whileTrue(new aUp(alArm));
-      // OpController.y().whileTrue(new aDown(alArm));
-      // OpController.start().whileTrue(new cSpinTogether(rolly));
-      // OpController.back().whileTrue(new InstantCommand(()->climbOpen.open()));
-      
-    drivetrain.registerTelemetry(logger::telemeterize);  
-
+    // Push live drivetrain telemetry to the log so you can monitor speeds, states, and odometry.
+    drivetrain.registerTelemetry(logger::telemeterize);
   }
-  public double joyRightX(){
+
+  public double joyRightX() {
     double rightX = driverController.getRightX();
-    if(Math.abs(rightX)> OperatorConstants.kJoyRightXDeadzone){
-        return rightX;
+    if (Math.abs(rightX) > OperatorConstants.kJoyRightXDeadzone) {
+      return rightX;
     }
     return 0;
-}
-public double joyLeftX(){
+  }
+
+  public double joyLeftX() {
     double leftX = driverController.getLeftX();
-    if(Math.abs(leftX) > OperatorConstants.kJoyLeftXDeadzone){
-        return leftX;
+    if (Math.abs(leftX) > OperatorConstants.kJoyLeftXDeadzone) {
+      return leftX;
     }
     return 0;
-}
-public double joyLeftY(){
-    double  leftY= driverController.getLeftY();
-    if(Math.abs(leftY) > OperatorConstants.kJoyLeftYDeadzone){
-        return leftY;
+  }
+
+  public double joyLeftY() {
+    double leftY = driverController.getLeftY();
+    if (Math.abs(leftY) > OperatorConstants.kJoyLeftYDeadzone) {
+      return leftY;
     }
     return 0;
-}
-public double limeX(){
-  double limeLeftX = lime.getX();
-  return limeLeftX;
-}
-// public double limeYaw(){
-//   double limeRightx = lime.getYaw();
-//   return limeRightx;
-// }
-// public double limeY(){
+  }
 
-//   double limeleftY = lime.getV()*0.5;
-//   return limeleftY;
-// }
-public double limeX_Left(){
-  double limeXLeft = lime.getLeftX();
-  return limeXLeft;
-}
-public double limeX_Right(){
-  double limeXRight = lime.getRightX();
-  return limeXRight;
-}
+  public double limeX() {
+    return lime.getX();
+  }
 
-public double speedScale(){
-  if(driverController.leftBumper().getAsBoolean())
-  return Constants.OperatorConstants.fastSpeed;
-  if(driverController.rightBumper().getAsBoolean())
-  return Constants.OperatorConstants.slowSpeed;
-  
-  return Constants.OperatorConstants.normalSpeed;
-}
+  public double limeX_Left() {
+    return lime.getLeftX();
+  }
+
+  public double limeX_Right() {
+    return lime.getRightX();
+  }
+
+  // Variable speed scaling based on bumper state (fast/slow/normal) to tame driver inputs.
+  public double speedScale() {
+    String mode = "Normal";
+    double scale = Constants.OperatorConstants.normalSpeed;
+    if (driverController.rightBumper().getAsBoolean()) {
+      mode = "Slow";
+      scale = Constants.OperatorConstants.slowSpeed;
+    }
+    if (driverController.leftBumper().getAsBoolean()) {
+      mode = "Fast";
+      scale = Constants.OperatorConstants.fastSpeed;
+    }
+    pushDriverTelemetry(mode, scale);
+    return scale;
+  }
+
+  /** One-time dashboard entries that do not change at runtime. */
+  private void publishStaticTelemetry() {
+    SmartDashboard.putNumber("Drive/MaxSpeedMps", MaxSpeed);
+    SmartDashboard.putNumber("Drive/MaxAngularRateRadPerSec", MaxAngularRate);
+  }
+
+  /** Live driver-focused telemetry for quick debugging and mode awareness. */
+  private void pushDriverTelemetry(String mode, double scale) {
+    SmartDashboard.putString("Drive/SpeedMode", mode);
+    SmartDashboard.putNumber("Drive/SpeedScale", scale);
+    SmartDashboard.putNumber("Joystick/LeftX", joyLeftX());
+    SmartDashboard.putNumber("Joystick/LeftY", joyLeftY());
+    SmartDashboard.putNumber("Joystick/RightX", joyRightX());
+
+    var state = drivetrain.getState();
+    if (state != null) {
+      SmartDashboard.putNumber("Drive/PoseX", state.Pose.getX());
+      SmartDashboard.putNumber("Drive/PoseY", state.Pose.getY());
+      SmartDashboard.putNumber("Drive/HeadingDeg", state.Pose.getRotation().getDegrees());
+      SmartDashboard.putNumber("Drive/MeasuredVx", state.Speeds.vxMetersPerSecond);
+      SmartDashboard.putNumber("Drive/MeasuredVy", state.Speeds.vyMetersPerSecond);
+      SmartDashboard.putNumber("Drive/MeasuredOmega", state.Speeds.omegaRadiansPerSecond);
+    }
+  }
+
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.
    *
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-    // An example command will be run in autonomous
-    // return new PathPlannerAuto("Ex Auto");
-    // Command Choice = autoChooser.getSelected();
-    // Command auto;
-    // switch (Choice.getName()) {
-    //   // case "midL4x1":
-    //   //   auto=new cL4x1(el, drivetrain rolly, Choice, coralArmm);
-    //   //   break;
-    //   case "midL1x1":
-    //     auto = new cL1x1(el, drivetrain, rolly, Choice.getName(), coralArmm);
-    //     break;
-    //   // case "sideL4x1":
-    //   // auto = new cL4x2(el, drivetrain, rolly, Choice, coralArmm);
-
-    //   // break;
-    //   case "sideL1x1":
-    //   auto = new cL4x3(el, drivetrain, rolly, Choice.getName(), coralArmm);
-    //   break;
-    //   default:
-    //   auto = new PathPlannerAuto("Ex Auto");
-    //   break;
-    //   // case "try":
-    //   // auto = new L1x1andBack(el, drivetrain, rolly, Choice, coralArmm);
-    //   // break;
-    // }
-    // return autoChooser.getSelected();
-    // return auto;
-    return null;
-    
+    Command selected = autoChooser.getSelected();
+    if (selected != null) {
+      return selected;
+    }
+    return new InstantCommand();
   }
 }
+
+
+
+
+
+
+

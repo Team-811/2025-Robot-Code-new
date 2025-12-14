@@ -1,5 +1,14 @@
 //LimelightHelpers v1.11 (REQUIRES LLOS 2025.0 OR LATER)
 
+/*
+ * File Overview: Vendor-provided Limelight helper utilities for NT access, odometry fusion, and control.
+ * Features/Details:
+ * - Wraps NetworkTables entries for Limelight data (poses, targets, latency) and helper math for AprilTag usage.
+ * - Provides convenience methods for setting pipelines, LEDs, snapshots, and latency-compensated robot pose estimation.
+ * - Includes camera pose setters for integration with robot geometry and WPILib pose/rotation types.
+ * - Used by higher-level vision code to avoid hand-writing NT boilerplate; treat as an external library file.
+ */
+
 package frc.robot;
 
 import edu.wpi.first.networktables.DoubleArrayEntry;
@@ -7,8 +16,6 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.TimestampedDoubleArray;
-import frc.robot.LimelightHelpers.LimelightResults;
-import frc.robot.LimelightHelpers.PoseEstimate;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -38,6 +45,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class LimelightHelpers {
 
+    private LimelightHelpers() {}
+
+    // Cache NT entries so repeated getters avoid re-looking up table topics.
     private static final Map<String, DoubleArrayEntry> doubleArrayEntries = new ConcurrentHashMap<>();
 
     /**
@@ -608,7 +618,8 @@ public class LimelightHelpers {
     }
 
 
-    private static ObjectMapper mapper;
+    private static final ObjectMapper mapper =
+        new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     /**
      * Print JSON Parse time to the console in milliseconds
@@ -616,7 +627,7 @@ public class LimelightHelpers {
     static boolean profileJSON = false;
 
     static final String sanitizeName(String name) {
-        if (name == "" || name == null) {
+        if (name == null || name.isBlank()) {
             return "limelight";
         }
         return name;
@@ -1625,9 +1636,6 @@ public class LimelightHelpers {
 
         long start = System.nanoTime();
         LimelightHelpers.LimelightResults results = new LimelightHelpers.LimelightResults();
-        if (mapper == null) {
-            mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        }
 
         try {
             results = mapper.readValue(getJSONDump(limelightName), LimelightResults.class);
@@ -1645,3 +1653,8 @@ public class LimelightHelpers {
         return results;
     }
 }
+
+
+
+
+

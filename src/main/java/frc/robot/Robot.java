@@ -4,65 +4,51 @@
 
 package frc.robot;
 
+/*
+ * File Overview: Implements the WPILib TimedRobot lifecycle and hands control to RobotContainer.
+ * Features/Details:
+ * - Constructs RobotContainer once to wire subsystems, commands, and autos.
+ * - Runs CommandScheduler every 20ms in robotPeriodic to service bindings and subsystem periodic.
+ * - Manages mode transitions: cancels auto at teleop, clears commands in test, seeds autos from chooser.
+ * - Simulation hooks provided (simulationInit/Periodic) if running in sim.
+ */
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.ctre.phoenix6.hardware.TalonFX;
-import com.revrobotics.spark.SparkMax;
 
 /**
- * The methods in this class are called automatically corresponding to each mode, as described in
- * the TimedRobot documentation. If you change the name of this class or the package after creating
- * this project, you must also update the Main.java file in the project.
+ * Implements the TimedRobot lifecycle and delegates command setup/routing to RobotContainer.
+ * If you change the name of this class or the package after creating this project, you must also
+ * update the Main.java file in the project.
  */
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
-  private SparkMax motor;
   private final RobotContainer m_robotContainer;
-  private TalonFX jerry;
-  private TalonFX climbMotor;
 
-  /**
-   * This function is run when the robot is first started up and should be used for any
-   * initialization code.
-   */
+  /** Runs once on startup; use this for construction and initialization. */
   public Robot() {
-    // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
-    // autonomous chooser on the dashboard.
+    // Instantiate RobotContainer to wire up subsystems, commands, and the autonomous chooser.
     m_robotContainer = new RobotContainer();
-    // motor = new SparkMax(22, MotorType.kBrushless);
-    // jerry = new TalonFX(24);
-    // climbMotor = new TalonFX(25);
   }
 
   /**
-   * This function is called every 20 ms, no matter the mode. Use this for items like diagnostics
-   * that you want ran during disabled, autonomous, teleoperated and test.
-   *
-   * <p>This runs after the mode specific periodic functions, but before LiveWindow and
-   * SmartDashboard integrated updating.
+   * Called every 20 ms in all modes. The scheduler polls inputs, schedules/cancels commands, and
+   * runs subsystem periodic hooks; this must run for the command-based framework to operate.
    */
   @Override
   public void robotPeriodic() {
-    // Runs the Scheduler.  This is responsible for polling buttons, adding newly-scheduled
-    // commands, running already-scheduled commands, removing finished or interrupted commands,
-    // and running subsystem periodic() methods.  This must be called from the robot's periodic
-    // block in order for anything in the Command-based framework to work.
+    // Keep the command scheduler alive each loop so bindings and subsystems stay updated.
     CommandScheduler.getInstance().run();
-    // motor.set(0.3);
-    // jerry.set(0.3);
-
   }
 
-  /** This function is called once each time the robot enters Disabled mode. */
+  /** Invoked once when the robot transitions into Disabled mode. */
   @Override
   public void disabledInit() {}
 
   @Override
   public void disabledPeriodic() {}
 
-  /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
+  /** Starts the currently selected autonomous command from {@link RobotContainer}. */
   @Override
   public void autonomousInit() {
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
@@ -79,10 +65,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopInit() {
-    // This makes sure that the autonomous stops running when
-    // teleop starts running. If you want the autonomous to
-    // continue until interrupted by another command, remove
-    // this line or comment it out.
+    // Cancel autonomous before driver control so commands do not fight each other.
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }
@@ -94,7 +77,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void testInit() {
-    // Cancels all running commands at the start of test mode.
+    // Clear out any running commands so test mode starts from a known state.
     CommandScheduler.getInstance().cancelAll();
   }
 
@@ -102,11 +85,11 @@ public class Robot extends TimedRobot {
   @Override
   public void testPeriodic() {}
 
-  /** This function is called once when the robot is first started up. */
+  /** Called once when starting up in simulation. */
   @Override
   public void simulationInit() {}
 
-  /** This function is called periodically whilst in simulation. */
+  /** Called periodically while running in simulation. */
   @Override
   public void simulationPeriodic() {}
 }

@@ -4,6 +4,13 @@
 
 package frc.robot;
 
+/*
+ * File Overview: Launches the robot program entry point.
+ * Features/Details:
+ * - Delegates startup to WPILib's RobotBase.startRobot with Robot::new.
+ * - Intentionally minimal; no static state or initialization to keep boot stable.
+ * - Only update if you rename the main Robot class.
+ */
 import edu.wpi.first.wpilibj.RobotBase;
 
 /**
