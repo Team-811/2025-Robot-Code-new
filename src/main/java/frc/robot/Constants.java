@@ -4,6 +4,14 @@
 
 package frc.robot;
 
+/*
+ * File Overview: Defines all robot-wide constants used across subsystems/commands.
+ * Features/Details:
+ * - OperatorConstants: controller ports, joystick deadbands, drivetrain speed presets.
+ * - Hardware IDs: CAN IDs and PCM channels for motors/solenoids used elsewhere.
+ * - Tunables: shared slip current limit and elevator deadband.
+ * Keep this file logic-free so values can be imported safely from anywhere.
+ */
 /**
  * Central place for robot-wide constants. Keep this free of behavior/logic so these values can be
  * referenced from anywhere without side effects.
@@ -27,13 +35,13 @@ public final class Constants {
     // Base speed scaler applied to the drivetrain (0-1).
     // USAGE: For SLOW -> Hold right bumper -> slowSpeed (0.5).
     //        For FAST -> Hold left bumper -> fastSpeed (1.0).
-    //        For NORMAL: Neither bumper -> normalSpeed (0.7 default).
+    //        For NORMAL: Neither bumper -> normalSpeed (0.8 default).
     public static final double kSpeed = 1.0;        // Base drivetrain speed 'scale' (0-1)
 
     // Driver speed scaling presets
     public static final double fastSpeed = 1.0;     // Driver fast speed preset
     public static final double slowSpeed = 0.5;     // Driver slow speed preset
-    public static final double normalSpeed = 0.7;   // Driver normal speed preset
+    public static final double normalSpeed = 0.8;   // Driver normal speed preset
 
     // Hardware IDs and limits
     public static final double kSlipCurrent = 120; // Current threshold for slip protection

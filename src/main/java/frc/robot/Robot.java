@@ -4,6 +4,14 @@
 
 package frc.robot;
 
+/*
+ * File Overview: Implements the WPILib TimedRobot lifecycle and hands control to RobotContainer.
+ * Features/Details:
+ * - Constructs RobotContainer once to wire subsystems, commands, and autos.
+ * - Runs CommandScheduler every 20ms in robotPeriodic to service bindings and subsystem periodic.
+ * - Manages mode transitions: cancels auto at teleop, clears commands in test, seeds autos from chooser.
+ * - Simulation hooks provided (simulationInit/Periodic) if running in sim.
+ */
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;

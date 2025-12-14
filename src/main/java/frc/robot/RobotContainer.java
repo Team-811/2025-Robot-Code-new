@@ -1,9 +1,40 @@
 // Copyright (c) FIRST and other WPILib contributors.
 // Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
+// the WPILib BSD license file in the root directory of this project
+// Controller Guide — Driver Xbox
+//     Left stick: strafe (X/Y field-centric), 
+//     Right stick X: rotate; deadbands 0.1.
+//
+// Speed modes: Modes shown on dashboard as Drive/SpeedMode.
+//     right bumper = Slow (0.5); 
+//     left bumper = Fast (1.0); 
+//     neither = Normal (0.8). 
+//     
+// Limelight Modes:
+// Right trigger: CenterToTagOneMeter (drive to 1m from AprilTag, face it).
+// Left trigger: AprilTagAim (approach to 0.3048m, auto aim/drive to tag).
+//
+// Start button: reseed field-centric heading.
+// Start + Y (held): SysId quasistatic forward on drivetrain.
+// Start + X (held): SysId quasistatic reverse on drivetrain.
+// 
+// Notes:
+// Default command is field-centric drive; MaxSpeed is scaled by kSpeed=1.0.
+// SysId bindings require robot in a safe state; they override normal driving while held.
+// Limelight: Targeting is enabled/disabled inside the aim commands; 
+//            Ensure the tag pipeline is active and LEDs on when using triggers.
 
 package frc.robot;
 
+/*
+ * File Overview: Central wiring hub for subsystems, commands, and driver controls.
+ * Features/Details:
+ * - Creates drivetrain (CTRE swerve), Limelight, telemetry logger, and autonomous chooser.
+ * - Defines driver Xbox bindings: field-centric default drive, speed modes via bumpers, vision assists on triggers, SysId on start+X/Y.
+ * - Applies joystick deadbands/slew rate limiting and speed scaling for smooth control.
+ * - Publishes driver-facing telemetry (speed mode/scale, joystick values, pose, velocities) to SmartDashboard.
+ * - Seeds field-centric heading at startup and registers drivetrain telemetry streaming.
+ */
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.AprilTagAim;
 import frc.robot.commands.CenterToTagOneMeter;
@@ -59,6 +90,7 @@ public class RobotContainer {
     // Seed heading at startup so field-centric drive has a sane reference.
     drivetrain.seedFieldCentric();
     configureBindings();
+    publishStaticTelemetry();
 
     // Build a PathPlanner-backed autonomous chooser and expose it to SmartDashboard.
     autoChooser = AutoBuilder.buildAutoChooser("midL4x1");
@@ -140,8 +172,33 @@ public class RobotContainer {
       mode = "Fast";
       scale = Constants.OperatorConstants.fastSpeed;
     }
-    SmartDashboard.putString("DriveSpeedMode", mode);
+    pushDriverTelemetry(mode, scale);
     return scale;
+  }
+
+  /** One-time dashboard entries that do not change at runtime. */
+  private void publishStaticTelemetry() {
+    SmartDashboard.putNumber("Drive/MaxSpeedMps", MaxSpeed);
+    SmartDashboard.putNumber("Drive/MaxAngularRateRadPerSec", MaxAngularRate);
+  }
+
+  /** Live driver-focused telemetry for quick debugging and mode awareness. */
+  private void pushDriverTelemetry(String mode, double scale) {
+    SmartDashboard.putString("Drive/SpeedMode", mode);
+    SmartDashboard.putNumber("Drive/SpeedScale", scale);
+    SmartDashboard.putNumber("Joystick/LeftX", joyLeftX());
+    SmartDashboard.putNumber("Joystick/LeftY", joyLeftY());
+    SmartDashboard.putNumber("Joystick/RightX", joyRightX());
+
+    var state = drivetrain.getState();
+    if (state != null) {
+      SmartDashboard.putNumber("Drive/PoseX", state.Pose.getX());
+      SmartDashboard.putNumber("Drive/PoseY", state.Pose.getY());
+      SmartDashboard.putNumber("Drive/HeadingDeg", state.Pose.getRotation().getDegrees());
+      SmartDashboard.putNumber("Drive/MeasuredVx", state.Speeds.vxMetersPerSecond);
+      SmartDashboard.putNumber("Drive/MeasuredVy", state.Speeds.vyMetersPerSecond);
+      SmartDashboard.putNumber("Drive/MeasuredOmega", state.Speeds.omegaRadiansPerSecond);
+    }
   }
 
   /**

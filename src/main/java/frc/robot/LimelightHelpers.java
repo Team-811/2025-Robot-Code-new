@@ -1,5 +1,14 @@
 //LimelightHelpers v1.11 (REQUIRES LLOS 2025.0 OR LATER)
 
+/*
+ * File Overview: Vendor-provided Limelight helper utilities for NT access, odometry fusion, and control.
+ * Features/Details:
+ * - Wraps NetworkTables entries for Limelight data (poses, targets, latency) and helper math for AprilTag usage.
+ * - Provides convenience methods for setting pipelines, LEDs, snapshots, and latency-compensated robot pose estimation.
+ * - Includes camera pose setters for integration with robot geometry and WPILib pose/rotation types.
+ * - Used by higher-level vision code to avoid hand-writing NT boilerplate; treat as an external library file.
+ */
+
 package frc.robot;
 
 import edu.wpi.first.networktables.DoubleArrayEntry;

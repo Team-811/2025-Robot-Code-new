@@ -1,5 +1,13 @@
 package frc.robot;
 
+/*
+ * File Overview: Publishes drivetrain telemetry to NetworkTables, SmartDashboard, and SignalLogger.
+ * Features/Details:
+ * - Accepts SwerveDriveState snapshots and outputs pose, speeds, module states/targets/positions, timestamps, and odometry frequency.
+ * - Builds Mechanism2d visuals for each module and publishes Field2d-like pose arrays for dashboards.
+ * - Logs pose and module state arrays via SignalLogger for offline analysis.
+ * - Includes normalized visual speed clamping to keep dashboard widgets readable.
+ */
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
 

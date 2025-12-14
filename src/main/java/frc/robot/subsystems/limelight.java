@@ -5,6 +5,7 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 /**
@@ -13,11 +14,16 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
  * Keep vision math here so commands stay lean and reusable.
  */
 public class Limelight extends SubsystemBase {
+  private static final String DEFAULT_TABLE = "limelight"; // camera NT name
+
   // NetworkTables entries (avoids re-looking them up every loop)
   private final NetworkTable table;
   private final NetworkTableEntry tvEntry;         // target valid (0 or 1)
   private final NetworkTableEntry tidEntry;        // target id
   private final NetworkTableEntry targetPoseEntry; // targetpose_cameraspace -> double[6]
+  private final NetworkTableEntry pipelineEntry;   // active pipeline (read/write)
+  private final NetworkTableEntry ledModeEntry;    // LED mode (write)
+  private final NetworkTableEntry latencyEntry;    // pipeline latency (ms)
 
   // Internal cached state (filled each periodic)
   private final double[] targetPose = new double[6];
@@ -33,10 +39,17 @@ public class Limelight extends SubsystemBase {
   private static final double STALE_TARGET_TIMEOUT_S = 0.25; // zero outputs if data older than this          // max magnitude for duty outputs
 
   public Limelight() {
-    table = NetworkTableInstance.getDefault().getTable("limelight");
+    this(DEFAULT_TABLE);
+  }
+
+  public Limelight(String tableName) {
+    table = NetworkTableInstance.getDefault().getTable(tableName);
     tvEntry = table.getEntry("tv");
     tidEntry = table.getEntry("tid");
     targetPoseEntry = table.getEntry("targetpose_cameraspace");
+    pipelineEntry = table.getEntry("getpipe");
+    ledModeEntry = table.getEntry("ledMode");
+    latencyEntry = table.getEntry("tl"); // total latency ms
 
     // Start with zeros so getters are safe before data arrives.
     for (int i = 0; i < targetPose.length; i++) {
@@ -73,6 +86,17 @@ public class Limelight extends SubsystemBase {
     } else {
       timer.stop();
     }
+
+    // Minimal live telemetry to dashboards/log viewers.
+    SmartDashboard.putBoolean("Limelight/HasTarget", lastHasTarget);
+    SmartDashboard.putNumber("Limelight/TargetId", targetId);
+    SmartDashboard.putNumber("Limelight/Pipeline", pipelineEntry.getDouble(-1));
+    SmartDashboard.putNumber("Limelight/LatencyMs", latencyEntry.getDouble(0.0));
+    SmartDashboard.putNumber("Limelight/CamX", getX());
+    SmartDashboard.putNumber("Limelight/CamZ", getZ());
+    SmartDashboard.putNumber("Limelight/YawRad", getYawRadians());
+    SmartDashboard.putNumber("Limelight/LastUpdateSec", lastUpdateTimeSeconds);
+    SmartDashboard.putBoolean("Limelight/Stale", isStale());
   }
 
   // ---------------------------
@@ -195,8 +219,21 @@ public class Limelight extends SubsystemBase {
       timer.start();
     }
   }
-}
 
+  // ---------------------------
+  // Pipeline / LED helpers
+  // ---------------------------
+
+  /** Set the active pipeline (0-based). */
+  public void setPipeline(int pipeline) {
+    table.getEntry("pipeline").setNumber(pipeline);
+  }
+
+  /** Force LEDs on/off (true = on, false = off). */
+  public void setLEDs(boolean on) {
+    ledModeEntry.setNumber(on ? 3 : 1); // 3 = force on, 1 = force off
+  }
+}
 
 
 
