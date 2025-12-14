@@ -42,9 +42,9 @@ public class RobotContainer {
   private final Telemetry logger = new Telemetry(MaxSpeed);
 
   // Slew limiters tame acceleration in each axis/rotation to keep the robot smooth.
-  private final SlewRateLimiter slewLimY = new SlewRateLimiter(1.5);
-  private final SlewRateLimiter slewLimX = new SlewRateLimiter(1.5);
-  private final SlewRateLimiter slewLimRote = new SlewRateLimiter(1.5);
+  private final SlewRateLimiter slewLimY = new SlewRateLimiter(2.0);
+  private final SlewRateLimiter slewLimX = new SlewRateLimiter(2.0);
+  private final SlewRateLimiter slewLimRote = new SlewRateLimiter(1.0);
 
   public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
@@ -130,15 +130,18 @@ public class RobotContainer {
 
   // Variable speed scaling based on bumper state (fast/slow/normal) to tame driver inputs.
   public double speedScale() {
+    String mode = "Normal";
+    double scale = Constants.OperatorConstants.normalSpeed;
     if (driverController.rightBumper().getAsBoolean()) {
-      return Constants.OperatorConstants.slowSpeed;
+      mode = "Slow";
+      scale = Constants.OperatorConstants.slowSpeed;
     }
     if (driverController.leftBumper().getAsBoolean()) {
-      return Constants.OperatorConstants.fastSpeed;
+      mode = "Fast";
+      scale = Constants.OperatorConstants.fastSpeed;
     }
-    
-
-    return Constants.OperatorConstants.normalSpeed;
+    SmartDashboard.putString("DriveSpeedMode", mode);
+    return scale;
   }
 
   /**
