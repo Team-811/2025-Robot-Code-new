@@ -39,6 +39,8 @@ public class Limelight extends SubsystemBase {
   private static final double DUTY_CLAMP = 0.8;          // max magnitude for duty outputs
   private static final double STALE_TARGET_TIMEOUT_S = 0.5; // zero outputs if data older than this
   private static final double LOSS_DEBOUNCE_S = 0.3; // require sustained loss before declaring no target
+  private static final double POSE_DEADBAND_METERS = 0.02; // ignore tiny pose jitters
+  private static final double YAW_DEADBAND_RAD = 0.02;     // ignore tiny yaw jitters
 
   public Limelight() {
     this(DEFAULT_TABLE);
@@ -175,7 +177,7 @@ public class Limelight extends SubsystemBase {
   // ---------------------------
 
   public double targetXError() {
-    return getX();
+    return MathUtil.applyDeadband(getX(), POSE_DEADBAND_METERS);
   }
 
   public double AimTargetXDutyCycle() {
@@ -184,7 +186,7 @@ public class Limelight extends SubsystemBase {
   }
 
   public double targetZError() {
-    return getZ();
+    return MathUtil.applyDeadband(getZ(), POSE_DEADBAND_METERS);
   }
 
   public double AimTargetZDutyCycle() {
@@ -194,7 +196,7 @@ public class Limelight extends SubsystemBase {
 
   public double targetYawError() {
     // Negate to match original sign convention (rotate to reduce yaw error).
-    return -getYawRadians();
+    return MathUtil.applyDeadband(-getYawRadians(), YAW_DEADBAND_RAD);
   }
 
   public double AimTargetYawDutyCycle() {
@@ -250,5 +252,4 @@ public class Limelight extends SubsystemBase {
     ledModeEntry.setNumber(on ? 3 : 1); // 3 = force on, 1 = force off
   }
 }
-
 
