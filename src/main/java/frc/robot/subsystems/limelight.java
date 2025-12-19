@@ -36,7 +36,7 @@ public class Limelight extends SubsystemBase {
   // Tuning constants
   private static final double DEFAULT_SIDE_OFFSET = 0.1; // meters offset used for left/right aim
   private static final double DUTY_CLAMP = 0.8;          // max magnitude for duty outputs
-  private static final double STALE_TARGET_TIMEOUT_S = 0.25; // zero outputs if data older than this          // max magnitude for duty outputs
+  private static final double STALE_TARGET_TIMEOUT_S = 0.25; // zero outputs if data older than this
 
   public Limelight() {
     this(DEFAULT_TABLE);
@@ -112,16 +112,20 @@ public class Limelight extends SubsystemBase {
     return (Timer.getFPGATimestamp() - lastUpdateTimeSeconds) > STALE_TARGET_TIMEOUT_S;
   }
 
-  /** X (lateral) camera-space meters; returns 0 when no target. */
+  /**
+   * X (lateral) camera-space meters; returns 0 when no target.
+   * Limelight targetpose_cameraspace axes: X=forward, Y=left/right, Z=up/down.
+   * We expose "X" here as the left/right component for backward compatibility.
+   */
   public double getX() {
     if (isStale()) return 0.0;
-    return hasTarget() ? targetPose[0] : 0.0;
+    return hasTarget() && targetPose.length > 1 ? targetPose[1] : 0.0; // Y axis from Limelight
   }
 
-  /** Z (forward) camera-space meters; returns 0 when no target. */
+  /** Z (forward) camera-space meters; returns 0 when no target. (Limelight X axis) */
   public double getZ() {
     if (isStale()) return 0.0;
-    return hasTarget() ? targetPose[2] : 0.0;
+    return hasTarget() ? targetPose[0] : 0.0; // X axis from Limelight
   }
 
   /** Yaw (degrees in most pipelines) converted to radians; returns 0 when no target. */
@@ -138,7 +142,7 @@ public class Limelight extends SubsystemBase {
   /** Camera Y (vertical) meters; returns 0 when no target. */
   public double getMeasureY() {
     if (isStale()) return 0.0;
-    return hasTarget() && targetPose.length > 1 ? targetPose[1] : 0.0;
+    return hasTarget() && targetPose.length > 2 ? targetPose[2] : 0.0;
   }
 
   /** Alias for X to preserve compatibility with prior code. */
@@ -234,7 +238,6 @@ public class Limelight extends SubsystemBase {
     ledModeEntry.setNumber(on ? 3 : 1); // 3 = force on, 1 = force off
   }
 }
-
 
 
 
