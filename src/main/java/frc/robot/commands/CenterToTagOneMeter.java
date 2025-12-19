@@ -2,6 +2,7 @@ package frc.robot.commands;
 
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Limelight;
@@ -20,9 +21,11 @@ public class CenterToTagOneMeter extends Command {
   private static final double KP_YAW = 2.5;         // scale yaw error to rad/s
   private static final double MAX_TRANS_SPEED = 1.5; // m/s clamp
   private static final double MAX_YAW_RATE = RotationsPerSecond.of(0.75).in(RadiansPerSecond);
+  private static final double LOSS_DEBOUNCE_S = 0.2; // avoid stutter on brief loss
 
   private final Limelight lime;
   private final CommandSwerveDrivetrain drivetrain;
+  private final Timer lossTimer = new Timer();
 
   public CenterToTagOneMeter(Limelight lime, CommandSwerveDrivetrain drivetrain) {
     this.lime = lime;
@@ -33,11 +36,21 @@ public class CenterToTagOneMeter extends Command {
   @Override
   public void initialize() {
     lime.setTargeting(true);
+    lime.setLEDs(true);
+    lossTimer.stop();
+    lossTimer.reset();
   }
 
   @Override
   public void execute() {
-    if (!lime.hasTarget()) {
+    if (!lime.hasTarget() || !lime.isPoseValid()) {
+      if (!lossTimer.isRunning()) {
+        lossTimer.reset();
+        lossTimer.start();
+      }
+      if (!lossTimer.hasElapsed(LOSS_DEBOUNCE_S)) {
+        return; // keep last command outputs during brief dropouts
+      }
       drivetrain.applyRequest(() ->
           new SwerveRequest.FieldCentric()
               .withVelocityX(0)
@@ -46,6 +59,8 @@ public class CenterToTagOneMeter extends Command {
       ).execute();
       return;
     }
+    lossTimer.stop();
+    lossTimer.reset();
 
     // Errors relative to desired pose
     double xError = lime.getX(); // strafe to zero
@@ -68,6 +83,7 @@ public class CenterToTagOneMeter extends Command {
   @Override
   public void end(boolean interrupted) {
     lime.setTargeting(false);
+    lime.setLEDs(false);
     drivetrain.applyRequest(() ->
         new SwerveRequest.FieldCentric()
             .withVelocityX(0)
@@ -78,8 +94,8 @@ public class CenterToTagOneMeter extends Command {
 
   @Override
   public boolean isFinished() {
-    if (!lime.hasTarget()) {
-      return true;
+    if (!lime.hasTarget() || !lime.isPoseValid()) {
+      return lossTimer.hasElapsed(LOSS_DEBOUNCE_S);
     }
     double xError = Math.abs(lime.getX());
     double distanceError = Math.abs(lime.getZ() - TARGET_DISTANCE_METERS);

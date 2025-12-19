@@ -29,6 +29,7 @@ public class Limelight extends SubsystemBase {
   private final double[] targetPose = new double[6];
   private int targetId = -1;
   private final Timer timer = new Timer();        // example timer to track target age
+  private final Timer lossTimer = new Timer();    // debounce loss of target
   private boolean isTargeting = false;            // toggle hook if you want to gate outputs
   private boolean lastHasTarget = false;
   private double lastUpdateTimeSeconds = 0.0; // toggle hook if you want to gate outputs
@@ -36,7 +37,15 @@ public class Limelight extends SubsystemBase {
   // Tuning constants
   private static final double DEFAULT_SIDE_OFFSET = 0.1; // meters offset used for left/right aim
   private static final double DUTY_CLAMP = 0.8;          // max magnitude for duty outputs
-  private static final double STALE_TARGET_TIMEOUT_S = 0.25; // zero outputs if data older than this          // max magnitude for duty outputs
+  private static final double STALE_TARGET_TIMEOUT_S_DEFAULT = 0.5; // zero outputs if data older than this
+  private static final double LOSS_DEBOUNCE_S_DEFAULT = 0.3; // require sustained loss before declaring no target
+  private static final double POSE_DEADBAND_METERS_DEFAULT = 0.02; // ignore tiny pose jitters
+  private static final double YAW_DEADBAND_RAD_DEFAULT = 0.02;     // ignore tiny yaw jitters
+  private double staleTargetTimeout = STALE_TARGET_TIMEOUT_S_DEFAULT;
+  private double lossDebounceSeconds = LOSS_DEBOUNCE_S_DEFAULT;
+  private double poseDeadbandMeters = POSE_DEADBAND_METERS_DEFAULT;
+  private double yawDeadbandRad = YAW_DEADBAND_RAD_DEFAULT;
+  private static final double MIN_POSE_Z_METERS = 0.1; // minimum believable forward distance
 
   public Limelight() {
     this(DEFAULT_TABLE);
@@ -56,6 +65,11 @@ public class Limelight extends SubsystemBase {
       targetPose[i] = 0.0;
     }
 
+    SmartDashboard.putNumber("Limelight/Tune/StaleTimeoutS", staleTargetTimeout);
+    SmartDashboard.putNumber("Limelight/Tune/LossDebounceS", lossDebounceSeconds);
+    SmartDashboard.putNumber("Limelight/Tune/PoseDeadbandM", poseDeadbandMeters);
+    SmartDashboard.putNumber("Limelight/Tune/YawDeadbandRad", yawDeadbandRad);
+
     // If you need tag filtering/orientation, configure it here (uncomment after verifying API):
     // int[] validIDs = {3, 4};
     // LimelightHelpers.SetFiducialIDFiltersOverride("limelight", validIDs);
@@ -64,9 +78,14 @@ public class Limelight extends SubsystemBase {
 
   @Override
   public void periodic() {
+    staleTargetTimeout = SmartDashboard.getNumber("Limelight/Tune/StaleTimeoutS", staleTargetTimeout);
+    lossDebounceSeconds = SmartDashboard.getNumber("Limelight/Tune/LossDebounceS", lossDebounceSeconds);
+    poseDeadbandMeters = SmartDashboard.getNumber("Limelight/Tune/PoseDeadbandM", poseDeadbandMeters);
+    yawDeadbandRad = SmartDashboard.getNumber("Limelight/Tune/YawDeadbandRad", yawDeadbandRad);
+
     // Read validity flag and pose once per loop. tv: 1 = valid target, 0 = none.
     double tv = tvEntry.getDouble(0.0);
-    lastHasTarget = tv >= 0.5;
+    boolean rawHasTarget = tv >= 0.5;
 
     // Copy pose data defensively (array may be missing or shorter than expected).
     double[] rawPose = targetPoseEntry.getDoubleArray(new double[0]);
@@ -76,14 +95,24 @@ public class Limelight extends SubsystemBase {
 
     targetId = (int) tidEntry.getNumber(-1).doubleValue();
 
-    // Example timer usage: track how long a target has been visible and age out stale data.
-    if (lastHasTarget) {
+    // Track how long a target has been visible and debounce losses.
+    if (rawHasTarget) {
+      lossTimer.stop();
+      lossTimer.reset();
+      lastHasTarget = true;
       if (!timer.isRunning()) {
         timer.reset();
         timer.start();
       }
       lastUpdateTimeSeconds = Timer.getFPGATimestamp();
     } else {
+      if (!lossTimer.isRunning()) {
+        lossTimer.reset();
+        lossTimer.start();
+      }
+      if (lossTimer.hasElapsed(lossDebounceSeconds)) {
+        lastHasTarget = false;
+      }
       timer.stop();
     }
 
@@ -97,6 +126,7 @@ public class Limelight extends SubsystemBase {
     SmartDashboard.putNumber("Limelight/YawRad", getYawRadians());
     SmartDashboard.putNumber("Limelight/LastUpdateSec", lastUpdateTimeSeconds);
     SmartDashboard.putBoolean("Limelight/Stale", isStale());
+    SmartDashboard.putBoolean("Limelight/PoseSuspicious", lastHasTarget && !isPoseValid());
   }
 
   // ---------------------------
@@ -109,19 +139,28 @@ public class Limelight extends SubsystemBase {
   }
 
   private boolean isStale() {
-    return (Timer.getFPGATimestamp() - lastUpdateTimeSeconds) > STALE_TARGET_TIMEOUT_S;
+    return (Timer.getFPGATimestamp() - lastUpdateTimeSeconds) > staleTargetTimeout;
   }
 
-  /** X (lateral) camera-space meters; returns 0 when no target. */
+  /**
+   * X (lateral) camera-space meters; returns 0 when no target.
+   * Limelight targetpose_cameraspace axes: X=forward, Y=left/right, Z=up/down.
+   * We expose "X" here as the left/right component for backward compatibility.
+   */
   public double getX() {
     if (isStale()) return 0.0;
-    return hasTarget() ? targetPose[0] : 0.0;
+    return hasTarget() && targetPose.length > 1 ? targetPose[1] : 0.0; // Y axis from Limelight
   }
 
-  /** Z (forward) camera-space meters; returns 0 when no target. */
+  /** Z (forward) camera-space meters; returns 0 when no target. (Limelight X axis) */
   public double getZ() {
     if (isStale()) return 0.0;
-    return hasTarget() ? targetPose[2] : 0.0;
+    return hasTarget() ? targetPose[0] : 0.0; // X axis from Limelight
+  }
+
+  /** True when pose data looks reasonable (non-zero forward distance) while target is valid. */
+  public boolean isPoseValid() {
+    return hasTarget() && !isStale() && Math.abs(targetPose[0]) > MIN_POSE_Z_METERS;
   }
 
   /** Yaw (degrees in most pipelines) converted to radians; returns 0 when no target. */
@@ -138,7 +177,7 @@ public class Limelight extends SubsystemBase {
   /** Camera Y (vertical) meters; returns 0 when no target. */
   public double getMeasureY() {
     if (isStale()) return 0.0;
-    return hasTarget() && targetPose.length > 1 ? targetPose[1] : 0.0;
+    return hasTarget() && targetPose.length > 2 ? targetPose[2] : 0.0;
   }
 
   /** Alias for X to preserve compatibility with prior code. */
@@ -159,7 +198,7 @@ public class Limelight extends SubsystemBase {
   // ---------------------------
 
   public double targetXError() {
-    return getX();
+    return MathUtil.applyDeadband(getX(), poseDeadbandMeters);
   }
 
   public double AimTargetXDutyCycle() {
@@ -168,7 +207,7 @@ public class Limelight extends SubsystemBase {
   }
 
   public double targetZError() {
-    return getZ();
+    return MathUtil.applyDeadband(getZ(), poseDeadbandMeters);
   }
 
   public double AimTargetZDutyCycle() {
@@ -178,7 +217,7 @@ public class Limelight extends SubsystemBase {
 
   public double targetYawError() {
     // Negate to match original sign convention (rotate to reduce yaw error).
-    return -getYawRadians();
+    return MathUtil.applyDeadband(-getYawRadians(), yawDeadbandRad);
   }
 
   public double AimTargetYawDutyCycle() {
@@ -214,9 +253,13 @@ public class Limelight extends SubsystemBase {
     System.out.println("Limelight targeting: " + isTargeting);
     if (!isTargeting) {
       timer.stop();
+      lossTimer.stop();
+      lossTimer.reset();
     } else {
       timer.reset();
       timer.start();
+      lossTimer.stop();
+      lossTimer.reset();
     }
   }
 
@@ -234,7 +277,3 @@ public class Limelight extends SubsystemBase {
     ledModeEntry.setNumber(on ? 3 : 1); // 3 = force on, 1 = force off
   }
 }
-
-
-
-

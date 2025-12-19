@@ -1,34 +1,19 @@
 // Copyright (c) FIRST and other WPILib contributors.
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project
-// Controller Guide — Driver Xbox
-//     Left stick: strafe (X/Y field-centric), 
-//     Right stick X: rotate; deadbands 0.1.
+// Controller Guide - Driver Xbox
+//   Left stick: strafe (field-centric X/Y)
+//   Right stick X: rotate; deadbands 0.1
 //
-// Speed modes: Modes shown on dashboard as Drive/SpeedMode.
-//  * Right bumper   = Slow   (0.5)
-//  * Left bumper    = Fast   (1.0) 
-//  * Neither        = Normal (0.8) 
-//     
-// Limelight Modes:
-//   * Right trigger: CenterToTagOneMeter (drive to 1m from AprilTag, face it).
-//   * Left trigger: AprilTagAim (approach to 0.3048m, auto aim/drive to tag).
-//   * How to use them:
-//        Make sure the Limelight is on the AprilTag pipeline with LEDs on so tv goes true.
-//        Aim the camera roughly toward the tag; if the tag isn’t in view, the robot will not move.
-//        Hold the chosen trigger:
-//          You retain control only when not holding the trigger; while held, the command drives the swerve.
-//          The command exits when the distance target is reached or the tag is lost.
-//          Release the trigger to return to normal field-centric driving.
-//        Behavior details:
-//          Both commands gate on hasTarget(): no target → robot commands zero velocity for safety.
-//          CenterToTagOneMeter uses a simple P controller to hit 1 m, centering X and yaw.
-//          AprilTagAim ramps speed down within ~0.5 m of the goal to avoid overshoot and stops at 1 ft.
-//          Neither handles pipeline/LED switching—ensure the correct pipeline/LED state before use.
-//        Best practices:
-//          Use right trigger first for a controlled staging position; use left trigger when you need to get close/precise.
-//          If the robot isn’t moving, check the dashboard Limelight/HasTarget and pipeline/LEDs; 
-//          the commands won’t drive without a valid tag.
+// Speed modes (Drive/SpeedMode on dashboard):
+//   Right bumper = Slow (0.5)
+//   Left bumper  = Fast (1.0)
+//   Neither      = Normal (0.8)
+//
+// Limelight (hold-to-run):
+//   Right trigger: CenterToTagOneMeter (drive to ~1 m, center X and yaw)
+//   Left trigger:  AprilTagAim (drive/strafe/yaw to ~0.3048 m, slow near goal)
+//   Pipeline/LEDs must be set to AprilTag with LEDs on; no target -> zero output.
 //
 // Start button: reseed field-centric heading.
 // Start + Y (held): SysId quasistatic forward on drivetrain.
@@ -39,7 +24,6 @@
 // SysId bindings require robot in a safe state; they override normal driving while held.
 // Limelight: Targeting is enabled/disabled inside the aim commands; 
 //            Ensure the tag pipeline is active and LEDs on when using triggers.
-
 package frc.robot;
 
 /*
@@ -126,8 +110,8 @@ public class RobotContainer {
                     .withRotationalRate(slewLimRote.calculate(-joyRightX()) * MaxAngularRate)));
 
     // Vision-assisted align/target commands.
-    driverController.rightTrigger().onTrue(new CenterToTagOneMeter(lime, drivetrain));
-    driverController.leftTrigger().onTrue(new AprilTagAim(lime, drivetrain));
+    driverController.rightTrigger().whileTrue(new CenterToTagOneMeter(lime, drivetrain));
+    driverController.leftTrigger().whileTrue(new AprilTagAim(lime, drivetrain));
 
     // SysId bindings to characterize drivetrain when requested.
     driverController.start().and(driverController.y())
