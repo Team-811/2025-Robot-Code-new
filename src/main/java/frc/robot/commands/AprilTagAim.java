@@ -13,9 +13,10 @@ import static edu.wpi.first.units.Units.*;
 
 public class AprilTagAim extends Command {
 
-  private final Limelight limee;
-  private final CommandSwerveDrivetrain drivetrainie;
+  private final Limelight lime;
+  private final CommandSwerveDrivetrain drivetrain;
   private final Timer timer = new Timer();
+  private boolean lostTarget = false;
 
   // Max rotation rate
   private final double MaxAngularRate =
@@ -25,14 +26,15 @@ public class AprilTagAim extends Command {
   private final double stopDistanceMeters = 0.3048;
 
   public AprilTagAim(Limelight lime, CommandSwerveDrivetrain drivetrain) {
-    limee = lime;
-    drivetrainie = drivetrain;
-    addRequirements(drivetrainie);
+    this.lime = lime;
+    this.drivetrain = drivetrain;
+    addRequirements(drivetrain);
   }
 
   @Override
   public void initialize() {
-    limee.setTargeting(true);
+    lime.setTargeting(true);
+    lostTarget = false;
     timer.reset();
     timer.start();
   }
@@ -40,36 +42,37 @@ public class AprilTagAim extends Command {
   @Override
   public void execute() {
 
-    // If no target, STOP SAFELY
-    if (!limee.hasTarget()) {
-      drivetrainie.applyRequest(() ->
+    // If no target, STOP SAFELY and finish
+    if (!lime.hasTarget()) {
+      drivetrain.applyRequest(() ->
           new SwerveRequest.FieldCentric()
               .withVelocityX(0)
               .withVelocityY(0)
               .withRotationalRate(0)
       ).execute();
+      lostTarget = true;
       return;
     }
 
     // Distance from camera to tag (forward/back)
-    double distance = limee.getZ();
+    double distance = lime.getZ();
 
     // Slow down as you approach the 1-foot mark
     final double slowFactor = Math.max(Math.min(1.0, (distance - stopDistanceMeters) / 0.5), 0.0); // clamp 0-1
 
-    drivetrainie.applyRequest(() ->
+    drivetrain.applyRequest(() ->
         new SwerveRequest.FieldCentric()
-            .withVelocityX(limee.RobotXDutyCycle() * 3 * slowFactor) // forward/back with ramp
-            .withVelocityY(limee.RobotYDutyCycle() * 3 * slowFactor) // strafe with ramp
-            .withRotationalRate(limee.AimTargetYawDutyCycle() * MaxAngularRate)
+            .withVelocityX(-lime.RobotXDutyCycle() * 3 * slowFactor) // invert to match field-centric forward
+            .withVelocityY(-lime.RobotYDutyCycle() * 3 * slowFactor) // invert to match field-centric left
+            .withRotationalRate(lime.AimTargetYawDutyCycle() * MaxAngularRate)
     ).execute();
   }
 
   @Override
   public void end(boolean interrupted) {
     timer.stop();
-    limee.setTargeting(false);
-    drivetrainie.applyRequest(() ->
+    lime.setTargeting(false);
+    drivetrain.applyRequest(() ->
         new SwerveRequest.FieldCentric()
             .withVelocityX(0)
             .withVelocityY(0)
@@ -81,17 +84,17 @@ public class AprilTagAim extends Command {
   public boolean isFinished() {
 
     // Failsafe timeout
-    if (!limee.hasTarget())
-      return timer.hasElapsed(1.0);
+    if (lostTarget)
+      return true;
 
     // Stop exactly at 1 foot
-    if (limee.getZ() <= stopDistanceMeters)
+    if (lime.getZ() <= stopDistanceMeters)
       return true;
 
     // Optional: Stop when fully aligned
     boolean aligned =
-        Math.abs(limee.targetXError()) < 0.01 &&      // sideways aligned
-        Math.abs(limee.targetYawError()) < 0.04;      // rotation aligned
+        Math.abs(lime.targetXError()) < 0.01 &&      // sideways aligned
+        Math.abs(lime.targetYawError()) < 0.04;      // rotation aligned
 
     return aligned || timer.hasElapsed(2.0);
   }
