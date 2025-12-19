@@ -42,7 +42,6 @@ public class AprilTagAim extends Command {
 
     // If no target, STOP SAFELY
     if (!limee.hasTarget()) {
-      timer.stop();
       drivetrainie.applyRequest(() ->
           new SwerveRequest.FieldCentric()
               .withVelocityX(0)
@@ -50,12 +49,6 @@ public class AprilTagAim extends Command {
               .withRotationalRate(0)
       ).execute();
       return;
-    }
-
-    // Restart timeout only when we have a target after being lost
-    if (!timer.isRunning()) {
-      timer.reset();
-      timer.start();
     }
 
     // Distance from camera to tag (forward/back)
