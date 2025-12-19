@@ -36,13 +36,14 @@ public class CenterToTagOneMeter extends Command {
   @Override
   public void initialize() {
     lime.setTargeting(true);
+    lime.setLEDs(true);
     lossTimer.stop();
     lossTimer.reset();
   }
 
   @Override
   public void execute() {
-    if (!lime.hasTarget()) {
+    if (!lime.hasTarget() || !lime.isPoseValid()) {
       if (!lossTimer.isRunning()) {
         lossTimer.reset();
         lossTimer.start();
@@ -82,6 +83,7 @@ public class CenterToTagOneMeter extends Command {
   @Override
   public void end(boolean interrupted) {
     lime.setTargeting(false);
+    lime.setLEDs(false);
     drivetrain.applyRequest(() ->
         new SwerveRequest.FieldCentric()
             .withVelocityX(0)
@@ -92,7 +94,7 @@ public class CenterToTagOneMeter extends Command {
 
   @Override
   public boolean isFinished() {
-    if (!lime.hasTarget()) {
+    if (!lime.hasTarget() || !lime.isPoseValid()) {
       return lossTimer.hasElapsed(LOSS_DEBOUNCE_S);
     }
     double xError = Math.abs(lime.getX());

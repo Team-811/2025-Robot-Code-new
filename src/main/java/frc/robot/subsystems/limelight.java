@@ -45,6 +45,7 @@ public class Limelight extends SubsystemBase {
   private double lossDebounceSeconds = LOSS_DEBOUNCE_S_DEFAULT;
   private double poseDeadbandMeters = POSE_DEADBAND_METERS_DEFAULT;
   private double yawDeadbandRad = YAW_DEADBAND_RAD_DEFAULT;
+  private static final double MIN_POSE_Z_METERS = 0.1; // minimum believable forward distance
 
   public Limelight() {
     this(DEFAULT_TABLE);
@@ -125,7 +126,7 @@ public class Limelight extends SubsystemBase {
     SmartDashboard.putNumber("Limelight/YawRad", getYawRadians());
     SmartDashboard.putNumber("Limelight/LastUpdateSec", lastUpdateTimeSeconds);
     SmartDashboard.putBoolean("Limelight/Stale", isStale());
-    SmartDashboard.putBoolean("Limelight/PoseSuspicious", lastHasTarget && Math.abs(getZ()) < 0.1);
+    SmartDashboard.putBoolean("Limelight/PoseSuspicious", lastHasTarget && !isPoseValid());
   }
 
   // ---------------------------
@@ -155,6 +156,11 @@ public class Limelight extends SubsystemBase {
   public double getZ() {
     if (isStale()) return 0.0;
     return hasTarget() ? targetPose[0] : 0.0; // X axis from Limelight
+  }
+
+  /** True when pose data looks reasonable (non-zero forward distance) while target is valid. */
+  public boolean isPoseValid() {
+    return hasTarget() && !isStale() && Math.abs(targetPose[0]) > MIN_POSE_Z_METERS;
   }
 
   /** Yaw (degrees in most pipelines) converted to radians; returns 0 when no target. */

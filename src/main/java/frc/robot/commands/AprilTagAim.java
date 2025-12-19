@@ -34,6 +34,7 @@ public class AprilTagAim extends Command {
   @Override
   public void initialize() {
     lime.setTargeting(true);
+    lime.setLEDs(true);
     lostTarget = false;
     timer.reset();
     timer.start();
@@ -43,7 +44,7 @@ public class AprilTagAim extends Command {
   public void execute() {
 
     // If no target, STOP SAFELY and finish
-    if (!lime.hasTarget()) {
+    if (!lime.hasTarget() || !lime.isPoseValid()) {
       drivetrain.applyRequest(() ->
           new SwerveRequest.FieldCentric()
               .withVelocityX(0)
@@ -72,6 +73,7 @@ public class AprilTagAim extends Command {
   public void end(boolean interrupted) {
     timer.stop();
     lime.setTargeting(false);
+    lime.setLEDs(false);
     drivetrain.applyRequest(() ->
         new SwerveRequest.FieldCentric()
             .withVelocityX(0)
