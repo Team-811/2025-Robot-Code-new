@@ -29,6 +29,7 @@ public class Limelight extends SubsystemBase {
   private final double[] targetPose = new double[6];
   private int targetId = -1;
   private final Timer timer = new Timer();        // example timer to track target age
+  private final Timer lossTimer = new Timer();    // debounce loss of target
   private boolean isTargeting = false;            // toggle hook if you want to gate outputs
   private boolean lastHasTarget = false;
   private double lastUpdateTimeSeconds = 0.0; // toggle hook if you want to gate outputs
@@ -36,7 +37,8 @@ public class Limelight extends SubsystemBase {
   // Tuning constants
   private static final double DEFAULT_SIDE_OFFSET = 0.1; // meters offset used for left/right aim
   private static final double DUTY_CLAMP = 0.8;          // max magnitude for duty outputs
-  private static final double STALE_TARGET_TIMEOUT_S = 0.25; // zero outputs if data older than this
+  private static final double STALE_TARGET_TIMEOUT_S = 0.5; // zero outputs if data older than this
+  private static final double LOSS_DEBOUNCE_S = 0.3; // require sustained loss before declaring no target
 
   public Limelight() {
     this(DEFAULT_TABLE);
@@ -66,7 +68,7 @@ public class Limelight extends SubsystemBase {
   public void periodic() {
     // Read validity flag and pose once per loop. tv: 1 = valid target, 0 = none.
     double tv = tvEntry.getDouble(0.0);
-    lastHasTarget = tv >= 0.5;
+    boolean rawHasTarget = tv >= 0.5;
 
     // Copy pose data defensively (array may be missing or shorter than expected).
     double[] rawPose = targetPoseEntry.getDoubleArray(new double[0]);
@@ -76,14 +78,24 @@ public class Limelight extends SubsystemBase {
 
     targetId = (int) tidEntry.getNumber(-1).doubleValue();
 
-    // Example timer usage: track how long a target has been visible and age out stale data.
-    if (lastHasTarget) {
+    // Track how long a target has been visible and debounce losses.
+    if (rawHasTarget) {
+      lossTimer.stop();
+      lossTimer.reset();
+      lastHasTarget = true;
       if (!timer.isRunning()) {
         timer.reset();
         timer.start();
       }
       lastUpdateTimeSeconds = Timer.getFPGATimestamp();
     } else {
+      if (!lossTimer.isRunning()) {
+        lossTimer.reset();
+        lossTimer.start();
+      }
+      if (lossTimer.hasElapsed(LOSS_DEBOUNCE_S)) {
+        lastHasTarget = false;
+      }
       timer.stop();
     }
 
@@ -238,6 +250,5 @@ public class Limelight extends SubsystemBase {
     ledModeEntry.setNumber(on ? 3 : 1); // 3 = force on, 1 = force off
   }
 }
-
 
 
