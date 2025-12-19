@@ -83,19 +83,21 @@ public class Limelight extends SubsystemBase {
     poseDeadbandMeters = SmartDashboard.getNumber("Limelight/Tune/PoseDeadbandM", poseDeadbandMeters);
     yawDeadbandRad = SmartDashboard.getNumber("Limelight/Tune/YawDeadbandRad", yawDeadbandRad);
 
-    // Read validity flag and pose once per loop. tv: 1 = valid target, 0 = none.
     double tv = tvEntry.getDouble(0.0);
     boolean rawHasTarget = tv >= 0.5;
 
-    // Copy pose data defensively (array may be missing or shorter than expected).
+    // Update timestamp first to keep timing consistent
+    if (rawHasTarget) {
+      lastUpdateTimeSeconds = Timer.getFPGATimestamp();
+    }
+
     double[] rawPose = targetPoseEntry.getDoubleArray(new double[0]);
     for (int i = 0; i < targetPose.length; i++) {
-      targetPose[i] = (rawPose != null && i < rawPose.length) ? rawPose[i] : 0.0;
+      targetPose[i] = (i < rawPose.length) ? rawPose[i] : 0.0;
     }
 
     targetId = (int) tidEntry.getNumber(-1).doubleValue();
 
-    // Track how long a target has been visible and debounce losses.
     if (rawHasTarget) {
       lossTimer.stop();
       lossTimer.reset();
@@ -104,7 +106,6 @@ public class Limelight extends SubsystemBase {
         timer.reset();
         timer.start();
       }
-      lastUpdateTimeSeconds = Timer.getFPGATimestamp();
     } else {
       if (!lossTimer.isRunning()) {
         lossTimer.reset();
@@ -116,7 +117,6 @@ public class Limelight extends SubsystemBase {
       timer.stop();
     }
 
-    // Minimal live telemetry to dashboards/log viewers.
     SmartDashboard.putBoolean("Limelight/HasTarget", lastHasTarget);
     SmartDashboard.putNumber("Limelight/TargetId", targetId);
     SmartDashboard.putNumber("Limelight/Pipeline", pipelineEntry.getDouble(-1));
@@ -186,10 +186,12 @@ public class Limelight extends SubsystemBase {
   }
 
   public double getLeftX() {
+    if (isStale()) return 0.0;
     return hasTarget() ? getX() - DEFAULT_SIDE_OFFSET : 0.0;
   }
 
   public double getRightX() {
+    if (isStale()) return 0.0;
     return hasTarget() ? getX() + DEFAULT_SIDE_OFFSET : 0.0;
   }
 
@@ -270,6 +272,7 @@ public class Limelight extends SubsystemBase {
   /** Set the active pipeline (0-based). */
   public void setPipeline(int pipeline) {
     table.getEntry("pipeline").setNumber(pipeline);
+    pipelineEntry.setNumber(pipeline); // Also update read entry for consistency
   }
 
   /** Force LEDs on/off (true = on, false = off). */
