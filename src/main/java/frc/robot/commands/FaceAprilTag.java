@@ -6,8 +6,8 @@ import frc.robot.subsystems.Limelight;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 /**
- * Faces the currently seen AprilTag by driving rotation to zero tx.
- * Uses an open-loop rotational rate proportional to tx; translation is zeroed.
+ * Faces the currently seen AprilTag by driving rotation to reduce Limelight tx to zero.
+ * Uses a simple proportional open-loop rotation; translation is held at zero so you only spin.
  */
 public class FaceAprilTag extends Command {
   private static final double kP = 0.04; // adjust as needed
@@ -27,6 +27,7 @@ public class FaceAprilTag extends Command {
   @Override
   public void execute() {
     if (!limelight.hasTarget()) {
+      // No target -> stop rotation to avoid hunting noise.
       drivetrain.setControl(request.withVelocityX(0).withVelocityY(0).withRotationalRate(0));
       return;
     }
@@ -43,6 +44,7 @@ public class FaceAprilTag extends Command {
 
   @Override
   public void end(boolean interrupted) {
+    // Stop motion when the command ends.
     drivetrain.setControl(request.withVelocityX(0).withVelocityY(0).withRotationalRate(0));
   }
 }

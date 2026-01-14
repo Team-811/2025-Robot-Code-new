@@ -7,7 +7,8 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 /**
  * Minimal Limelight helper for AprilTag targeting.
- * Reads pose/offsets, computes simple distance/height estimates, and pushes telemetry.
+ * Reads NT entries each loop (tx/ty/ta + camera-space pose), computes simple distance/height
+ * estimates, and publishes telemetry for debugging.
  */
 public class Limelight extends SubsystemBase {
   private static final String TABLE_NAME = "limelight"; // change if your LL name differs
@@ -25,9 +26,11 @@ public class Limelight extends SubsystemBase {
 
   @Override
   public void periodic() {
+    // Poll Limelight NetworkTables entries. If no target, LL reports zeros.
     tx = table.getEntry("tx").getDouble(0.0);
     ty = table.getEntry("ty").getDouble(0.0);
     ta = table.getEntry("ta").getDouble(0.0);
+    // targetpose_cameraspace = 3D pose of the detected tag relative to the camera (meters, radians).
     double[] pose = table.getEntry("targetpose_cameraspace").getDoubleArray(new double[6]);
     if (pose.length >= 6) {
       targetPoseX = pose[0];
@@ -40,6 +43,7 @@ public class Limelight extends SubsystemBase {
   }
 
   private void publishTelemetry() {
+    // Push values to dashboard for tuning/driver feedback.
     SmartDashboard.putBoolean("Limelight/HasTarget", hasTarget);
     SmartDashboard.putNumber("Limelight/tx", tx);
     SmartDashboard.putNumber("Limelight/ty", ty);
