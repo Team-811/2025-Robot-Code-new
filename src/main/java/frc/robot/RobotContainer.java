@@ -23,6 +23,7 @@
 // Default command is field-centric drive; MaxSpeed is scaled by kSpeed=1.0.
 // SysId bindings require robot in a safe state; they override normal driving while held.
 // Limelight: Targeting is enabled/disabled inside the aim commands; 
+//This file is loacted C:\Users\Team 811\FRC\2025-Robot-Code-new\2025-Robot-Code-new\src\main\java\frc\robot
 //            Ensure the tag pipeline is active and LEDs on when using triggers.
 package frc.robot;
 
