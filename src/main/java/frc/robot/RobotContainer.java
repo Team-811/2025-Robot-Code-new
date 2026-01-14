@@ -201,11 +201,6 @@ public class RobotContainer {
   }
 
   /** Live driver-focused telemetry for quick debugging and mode awareness. */
-  private void pushDriverTelemetry(String mode, double scale) {
-    pushDriverTelemetry(mode, scale, true);
-  }
-
-  /** Live driver-focused telemetry for quick debugging and mode awareness. */
   private void pushDriverTelemetry(String mode, double scale, boolean publishModeScale) {
     if (publishModeScale) {
       SmartDashboard.putString("Drive/SpeedMode", mode);
