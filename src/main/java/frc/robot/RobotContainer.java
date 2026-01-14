@@ -74,6 +74,12 @@ public class RobotContainer {
   private final SlewRateLimiter slewLimX = new SlewRateLimiter(2.0);
   private final SlewRateLimiter slewLimRote = new SlewRateLimiter(1.0);
 
+  // Cache last-published driver telemetry to avoid NetworkTables spam.
+  private String lastMode;
+  private Double lastScale;
+  private boolean lastRightBumper;
+  private boolean lastLeftBumper;
+
   public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
   // Driver controls (single Xbox assumed for drivetrain + vision assist).
@@ -90,9 +96,20 @@ public class RobotContainer {
     publishStaticTelemetry();
 
     // Build a PathPlanner-backed autonomous chooser and expose it to SmartDashboard.
-    autoChooser = AutoBuilder.buildAutoChooser("midL4x1");
-    autoChooser.setDefaultOption("Do Nothing", new InstantCommand());
-    autoChooser.addOption("Ex Auto", new PathPlannerAuto("Ex Auto"));
+    SendableChooser<Command> chooser;
+    try {
+      chooser = AutoBuilder.buildAutoChooser();
+      // Register available autos; "midL4x1" is treated as optional.
+      chooser.setDefaultOption("Do Nothing", new InstantCommand());
+      chooser.addOption("Ex Auto", new PathPlannerAuto("Ex Auto"));
+      chooser.addOption("midL4x1 (if present)", new PathPlannerAuto("midL4x1"));
+    } catch (Exception ex) {
+      // Fall back to a safe chooser if PathPlanner assets are missing.
+      chooser = new SendableChooser<>();
+      chooser.setDefaultOption("Do Nothing", new InstantCommand());
+      SmartDashboard.putString("autoChooser/Error", "PathPlanner chooser failed: " + ex.getMessage());
+    }
+    autoChooser = chooser;
     SmartDashboard.putData("autoChooser", autoChooser);
   }
 
@@ -102,7 +119,7 @@ public class RobotContainer {
     drivetrain.setDefaultCommand(
         drivetrain.applyRequest(
             () ->
-                drive.withVelocityX(slewLimY.calculate(joyLeftY()) * MaxSpeed * speedScale())
+                drive.withVelocityX(slewLimY.calculate(-joyLeftY()) * MaxSpeed * speedScale())
                     .withVelocityY(slewLimX.calculate(joyLeftX()) * MaxSpeed * speedScale())
                     .withRotationalRate(slewLimRote.calculate(-joyRightX()) * MaxAngularRate)));
 
@@ -145,6 +162,15 @@ public class RobotContainer {
 
   // Variable speed scaling based on bumper state (fast/slow/normal) to tame driver inputs.
   public double speedScale() {
+    // Cache previous values to avoid spamming NetworkTables every loop.
+    // These will reset on robot restart which is fine for driver awareness.
+    if (lastMode != null && lastScale != null) {
+      if (driverController.rightBumper().getAsBoolean() == lastRightBumper
+          && driverController.leftBumper().getAsBoolean() == lastLeftBumper) {
+        return lastScale;
+      }
+    }
+
     String mode = "Normal";
     double scale = Constants.OperatorConstants.normalSpeed;
     if (driverController.rightBumper().getAsBoolean()) {
@@ -156,6 +182,10 @@ public class RobotContainer {
       scale = Constants.OperatorConstants.fastSpeed;
     }
     pushDriverTelemetry(mode, scale);
+    lastMode = mode;
+    lastScale = scale;
+    lastRightBumper = driverController.rightBumper().getAsBoolean();
+    lastLeftBumper = driverController.leftBumper().getAsBoolean();
     return scale;
   }
 
