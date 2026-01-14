@@ -42,6 +42,7 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import frc.robot.commands.FaceAprilTag;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.auto.AutoBuilder;
 
@@ -74,6 +75,7 @@ public class RobotContainer {
   private final SlewRateLimiter slewLimX = new SlewRateLimiter(2.0);
   private final SlewRateLimiter slewLimRote = new SlewRateLimiter(1.0);
 
+  private final frc.robot.subsystems.Limelight limelight = new frc.robot.subsystems.Limelight();
   // Cache last-published driver telemetry to avoid NetworkTables spam.
   private String lastMode;
   private Double lastScale;
@@ -131,6 +133,8 @@ public class RobotContainer {
     driverController.start().and(driverController.x())
         .whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
     driverController.start().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+    // Hold left trigger to face the nearest AprilTag using Limelight.
+    driverController.leftTrigger().whileTrue(new FaceAprilTag(drivetrain, limelight));
 
     // Push live drivetrain telemetry to the log so you can monitor speeds, states, and odometry.
     drivetrain.registerTelemetry(logger::telemeterize);
