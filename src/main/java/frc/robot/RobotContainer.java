@@ -162,31 +162,32 @@ public class RobotContainer {
 
   // Variable speed scaling based on bumper state (fast/slow/normal) to tame driver inputs.
   public double speedScale() {
-    // Cache previous values to avoid spamming NetworkTables every loop.
-    // These will reset on robot restart which is fine for driver awareness.
-    if (lastMode != null && lastScale != null) {
-      if (driverController.rightBumper().getAsBoolean() == lastRightBumper
-          && driverController.leftBumper().getAsBoolean() == lastLeftBumper) {
-        return lastScale;
-      }
-    }
-
     String mode = "Normal";
     double scale = Constants.OperatorConstants.normalSpeed;
-    if (driverController.rightBumper().getAsBoolean()) {
+    boolean rightPressed = driverController.rightBumper().getAsBoolean();
+    boolean leftPressed = driverController.leftBumper().getAsBoolean();
+    if (rightPressed) {
       mode = "Slow";
       scale = Constants.OperatorConstants.slowSpeed;
     }
-    if (driverController.leftBumper().getAsBoolean()) {
+    if (leftPressed) {
       mode = "Fast";
       scale = Constants.OperatorConstants.fastSpeed;
     }
-    pushDriverTelemetry(mode, scale);
+    boolean modeChanged = modeChanged(rightPressed, leftPressed, scale);
+    pushDriverTelemetry(mode, scale, modeChanged);
     lastMode = mode;
     lastScale = scale;
-    lastRightBumper = driverController.rightBumper().getAsBoolean();
-    lastLeftBumper = driverController.leftBumper().getAsBoolean();
+    lastRightBumper = rightPressed;
+    lastLeftBumper = leftPressed;
     return scale;
+  }
+
+  private boolean modeChanged(boolean rightPressed, boolean leftPressed, double scale) {
+    if (lastMode == null || lastScale == null) {
+      return true;
+    }
+    return rightPressed != lastRightBumper || leftPressed != lastLeftBumper || scale != lastScale;
   }
 
   /** One-time dashboard entries that do not change at runtime. */
@@ -197,8 +198,15 @@ public class RobotContainer {
 
   /** Live driver-focused telemetry for quick debugging and mode awareness. */
   private void pushDriverTelemetry(String mode, double scale) {
-    SmartDashboard.putString("Drive/SpeedMode", mode);
-    SmartDashboard.putNumber("Drive/SpeedScale", scale);
+    pushDriverTelemetry(mode, scale, true);
+  }
+
+  /** Live driver-focused telemetry for quick debugging and mode awareness. */
+  private void pushDriverTelemetry(String mode, double scale, boolean publishModeScale) {
+    if (publishModeScale) {
+      SmartDashboard.putString("Drive/SpeedMode", mode);
+      SmartDashboard.putNumber("Drive/SpeedScale", scale);
+    }
     SmartDashboard.putNumber("Joystick/LeftX", joyLeftX());
     SmartDashboard.putNumber("Joystick/LeftY", joyLeftY());
     SmartDashboard.putNumber("Joystick/RightX", joyRightX());
