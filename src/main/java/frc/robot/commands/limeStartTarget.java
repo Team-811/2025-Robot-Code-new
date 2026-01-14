@@ -1,32 +1,32 @@
-package frc.robot.commands;
+// package frc.robot.commands;
 
-import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.Limelight;
-import frc.robot.subsystems.CommandSwerveDrivetrain;
+// import edu.wpi.first.wpilibj2.command.Command;
+// import frc.robot.subsystems.Limelight;
+// import frc.robot.subsystems.CommandSwerveDrivetrain;
 
-public class limeStartTarget extends Command {
+// public class limeStartTarget extends Command {
 
-    private final Limelight lime;
-    private final CommandSwerveDrivetrain drivetrain;
+//     private final Limelight lime;
+//     private final CommandSwerveDrivetrain drivetrain;
 
-    public limeStartTarget(Limelight lime, CommandSwerveDrivetrain drivetrain) {
-        this.lime = lime;
-        this.drivetrain = drivetrain;
-        addRequirements(lime);
-    }
+//     public limeStartTarget(Limelight lime, CommandSwerveDrivetrain drivetrain) {
+//         this.lime = lime;
+//         this.drivetrain = drivetrain;
+//         addRequirements(lime);
+//     }
 
-    @Override
-    public void initialize() {
+//     @Override
+//     public void initialize() {
 
-        // If Limelight already sees a target  start alignment immediately
-        if (lime.hasTarget()) {
-            new AprilTagAim(lime, drivetrain).schedule();
-        }
-    }
+//         // If Limelight already sees a target  start alignment immediately
+//         if (lime.hasTarget()) {
+//             new AprilTagAim(lime, drivetrain).schedule();
+//         }
+//     }
 
-    @Override
-    public boolean isFinished() {
-        return false;  // end immediately, the launched command keeps running
-    }
-}
+//     @Override
+//     public boolean isFinished() {
+//         return false;  // end immediately, the launched command keeps running
+//     }
+// }
 

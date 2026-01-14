@@ -36,11 +36,11 @@ package frc.robot;
  * - Seeds field-centric heading at startup and registers drivetrain telemetry streaming.
  */
 import frc.robot.Constants.OperatorConstants;
-import frc.robot.commands.AprilTagAim;
-import frc.robot.commands.CenterToTagOneMeter;
+// import frc.robot.commands.AprilTagAim;
+// import frc.robot.commands.CenterToTagOneMeter;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.subsystems.Limelight;
+// import frc.robot.subsystems.Limelight;
 
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
@@ -57,7 +57,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import static edu.wpi.first.units.Units.*;
 public class RobotContainer {
-  private final Limelight lime = new Limelight();
+  // private final Limelight lime = new Limelight();
 
   // Base speed scaling constants for the swerve (meters/sec and radians/sec).
   private final double MaxSpeed =
@@ -110,8 +110,8 @@ public class RobotContainer {
                     .withRotationalRate(slewLimRote.calculate(-joyRightX()) * MaxAngularRate)));
 
     // Vision-assisted align/target commands.
-    driverController.rightTrigger().whileTrue(new CenterToTagOneMeter(lime, drivetrain));
-    driverController.leftTrigger().whileTrue(new AprilTagAim(lime, drivetrain));
+    // driverController.rightTrigger().whileTrue(new CenterToTagOneMeter(lime, drivetrain));
+    // driverController.leftTrigger().whileTrue(new AprilTagAim(lime, drivetrain));
 
     // SysId bindings to characterize drivetrain when requested.
     driverController.start().and(driverController.y())
@@ -148,17 +148,17 @@ public class RobotContainer {
     return 0;
   }
 
-  public double limeX() {
-    return lime.getX();
-  }
+  // public double limeX() {
+  //   return lime.getX();
+  // }
 
-  public double limeX_Left() {
-    return lime.getLeftX();
-  }
+  // public double limeX_Left() {
+  //   return lime.getLeftX();
+  // }
 
-  public double limeX_Right() {
-    return lime.getRightX();
-  }
+  // public double limeX_Right() {
+  //   return lime.getRightX();
+  // }
 
   // Variable speed scaling based on bumper state (fast/slow/normal) to tame driver inputs.
   public double speedScale() {
