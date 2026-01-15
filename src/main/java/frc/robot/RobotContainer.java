@@ -42,6 +42,7 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import frc.robot.commands.FaceAprilTag;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.auto.AutoBuilder;
 
@@ -74,6 +75,13 @@ public class RobotContainer {
   private final SlewRateLimiter slewLimX = new SlewRateLimiter(2.0);
   private final SlewRateLimiter slewLimRote = new SlewRateLimiter(1.0);
 
+  private final frc.robot.subsystems.Limelight limelight = new frc.robot.subsystems.Limelight();
+  // Cache last-published driver telemetry to avoid NetworkTables spam.
+  private String lastMode;
+  private Double lastScale;
+  private boolean lastRightBumper;
+  private boolean lastLeftBumper;
+
   public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
   // Driver controls (single Xbox assumed for drivetrain + vision assist).
@@ -90,9 +98,20 @@ public class RobotContainer {
     publishStaticTelemetry();
 
     // Build a PathPlanner-backed autonomous chooser and expose it to SmartDashboard.
-    autoChooser = AutoBuilder.buildAutoChooser("midL4x1");
-    autoChooser.setDefaultOption("Do Nothing", new InstantCommand());
-    autoChooser.addOption("Ex Auto", new PathPlannerAuto("Ex Auto"));
+    SendableChooser<Command> chooser;
+    try {
+      chooser = AutoBuilder.buildAutoChooser();
+      // Register available autos; "midL4x1" is treated as optional.
+      chooser.setDefaultOption("Do Nothing", new InstantCommand());
+      chooser.addOption("Ex Auto", new PathPlannerAuto("Ex Auto"));
+      chooser.addOption("midL4x1 (if present)", new PathPlannerAuto("midL4x1"));
+    } catch (Exception ex) {
+      // Fall back to a safe chooser if PathPlanner assets are missing.
+      chooser = new SendableChooser<>();
+      chooser.setDefaultOption("Do Nothing", new InstantCommand());
+      SmartDashboard.putString("autoChooser/Error", "PathPlanner chooser failed: " + ex.getMessage());
+    }
+    autoChooser = chooser;
     SmartDashboard.putData("autoChooser", autoChooser);
   }
 
@@ -102,7 +121,7 @@ public class RobotContainer {
     drivetrain.setDefaultCommand(
         drivetrain.applyRequest(
             () ->
-                drive.withVelocityX(slewLimY.calculate(joyLeftY()) * MaxSpeed * speedScale())
+                drive.withVelocityX(slewLimY.calculate(-joyLeftY()) * MaxSpeed * speedScale())
                     .withVelocityY(slewLimX.calculate(joyLeftX()) * MaxSpeed * speedScale())
                     .withRotationalRate(slewLimRote.calculate(-joyRightX()) * MaxAngularRate)));
 
@@ -114,6 +133,8 @@ public class RobotContainer {
     driverController.start().and(driverController.x())
         .whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
     driverController.start().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+    // Hold left trigger to face the nearest AprilTag using Limelight.
+    driverController.leftTrigger().whileTrue(new FaceAprilTag(drivetrain, limelight));
 
     // Push live drivetrain telemetry to the log so you can monitor speeds, states, and odometry.
     drivetrain.registerTelemetry(logger::telemeterize);
@@ -147,16 +168,30 @@ public class RobotContainer {
   public double speedScale() {
     String mode = "Normal";
     double scale = Constants.OperatorConstants.normalSpeed;
-    if (driverController.rightBumper().getAsBoolean()) {
+    boolean rightPressed = driverController.rightBumper().getAsBoolean();
+    boolean leftPressed = driverController.leftBumper().getAsBoolean();
+    if (rightPressed) {
       mode = "Slow";
       scale = Constants.OperatorConstants.slowSpeed;
     }
-    if (driverController.leftBumper().getAsBoolean()) {
+    if (leftPressed) {
       mode = "Fast";
       scale = Constants.OperatorConstants.fastSpeed;
     }
-    pushDriverTelemetry(mode, scale);
+    boolean modeChanged = modeChanged(rightPressed, leftPressed, scale);
+    pushDriverTelemetry(mode, scale, modeChanged);
+    lastMode = mode;
+    lastScale = scale;
+    lastRightBumper = rightPressed;
+    lastLeftBumper = leftPressed;
     return scale;
+  }
+
+  private boolean modeChanged(boolean rightPressed, boolean leftPressed, double scale) {
+    if (lastMode == null || lastScale == null) {
+      return true;
+    }
+    return rightPressed != lastRightBumper || leftPressed != lastLeftBumper || scale != lastScale;
   }
 
   /** One-time dashboard entries that do not change at runtime. */
@@ -166,9 +201,11 @@ public class RobotContainer {
   }
 
   /** Live driver-focused telemetry for quick debugging and mode awareness. */
-  private void pushDriverTelemetry(String mode, double scale) {
-    SmartDashboard.putString("Drive/SpeedMode", mode);
-    SmartDashboard.putNumber("Drive/SpeedScale", scale);
+  private void pushDriverTelemetry(String mode, double scale, boolean publishModeScale) {
+    if (publishModeScale) {
+      SmartDashboard.putString("Drive/SpeedMode", mode);
+      SmartDashboard.putNumber("Drive/SpeedScale", scale);
+    }
     SmartDashboard.putNumber("Joystick/LeftX", joyLeftX());
     SmartDashboard.putNumber("Joystick/LeftY", joyLeftY());
     SmartDashboard.putNumber("Joystick/RightX", joyRightX());

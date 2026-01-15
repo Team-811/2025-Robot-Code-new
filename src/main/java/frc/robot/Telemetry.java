@@ -41,6 +41,10 @@ public class Telemetry {
     public Telemetry(double maxSpeed) {
         MaxSpeed = maxSpeed;
         SignalLogger.start();
+        // Publish Mechanism2d widgets once to avoid re-sending sendables every loop.
+        for (int i = 0; i < MODULE_COUNT; i++) {
+            SmartDashboard.putData("Module " + i, m_moduleMechanisms[i]);
+        }
     }
 
     /* What to publish over networktables for telemetry */
@@ -129,8 +133,6 @@ public class Telemetry {
             m_moduleSpeeds[i].setAngle(state.ModuleStates[i].angle);
             m_moduleDirections[i].setAngle(state.ModuleStates[i].angle);
             m_moduleSpeeds[i].setLength(normalizedSpeed);
-
-            SmartDashboard.putData("Module " + i, m_moduleMechanisms[i]);
         }
     }
 }
