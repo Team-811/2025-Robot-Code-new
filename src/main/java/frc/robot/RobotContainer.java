@@ -39,12 +39,12 @@ package frc.robot;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-import main.java.frc.robot.commands.stopMOVING;
+// import main.java.frc.robot.commands.stopMOVING;
 import main.java.frc.robot.subsystems.Limelight2;
 
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
-import frc.robot.commands.FaceAprilTag;
+// import frc.robot.commands.FaceAprilTag;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.auto.AutoBuilder;
 
@@ -139,7 +139,7 @@ public class RobotContainer {
     // Hold left trigger to face the nearest AprilTag using Limelight.
     // driverController.leftTrigger().whileTrue(new FaceAprilTag(drivetrain, limelight));
 
-    driverController.leftTrigger().whileTrue(new stopMOVING(lime, drivetrain));
+    // driverController.leftTrigger().whileTrue(new stopMOVING(lime, drivetrain));
 
     // Push live drivetrain telemetry to the log so you can monitor speeds, states, and odometry.
     drivetrain.registerTelemetry(logger::telemeterize);
