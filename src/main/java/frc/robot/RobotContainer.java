@@ -39,6 +39,8 @@ package frc.robot;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import main.java.frc.robot.commands.stopMOVING;
+import main.java.frc.robot.subsystems.Limelight2;
 
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
@@ -53,7 +55,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
-
 import static edu.wpi.first.units.Units.*;
 public class RobotContainer {
 
@@ -75,7 +76,9 @@ public class RobotContainer {
   private final SlewRateLimiter slewLimX = new SlewRateLimiter(2.0);
   private final SlewRateLimiter slewLimRote = new SlewRateLimiter(1.0);
 
-  private final frc.robot.subsystems.Limelight limelight = new frc.robot.subsystems.Limelight();
+
+  // private final frc.robot.subsystems.Limelight limelight = new frc.robot.subsystems.Limelight();
+  Limelight2 lime = new Limelight2();
   // Cache last-published driver telemetry to avoid NetworkTables spam.
   private String lastMode;
   private Double lastScale;
@@ -134,7 +137,9 @@ public class RobotContainer {
         .whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
     driverController.start().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
     // Hold left trigger to face the nearest AprilTag using Limelight.
-    driverController.leftTrigger().whileTrue(new FaceAprilTag(drivetrain, limelight));
+    // driverController.leftTrigger().whileTrue(new FaceAprilTag(drivetrain, limelight));
+
+    driverController.leftTrigger().whileTrue(new stopMOVING(lime, drivetrain));
 
     // Push live drivetrain telemetry to the log so you can monitor speeds, states, and odometry.
     drivetrain.registerTelemetry(logger::telemeterize);
