@@ -55,6 +55,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import com.ctre.phoenix6.swerve.SwerveRequest.RobotCentric;
 import static edu.wpi.first.units.Units.*;
 public class RobotContainer {
 
@@ -98,7 +99,7 @@ public class RobotContainer {
     // Seed heading at startup so field-centric drive has a sane reference.
     drivetrain.seedFieldCentric();
     configureBindings();
-    publishStaticTelemetry();
+    //publishStaticTelemetry();
 
     // Build a PathPlanner-backed autonomous chooser and expose it to SmartDashboard.
     SendableChooser<Command> chooser;
@@ -169,6 +170,7 @@ public class RobotContainer {
     return 0;
   }
 
+
   // Variable speed scaling based on bumper state (fast/slow/normal) to tame driver inputs.
   public double speedScale() {
     String mode = "Normal";
@@ -184,7 +186,7 @@ public class RobotContainer {
       scale = Constants.OperatorConstants.fastSpeed;
     }
     boolean modeChanged = modeChanged(rightPressed, leftPressed, scale);
-    pushDriverTelemetry(mode, scale, modeChanged);
+    // pushDriverTelemetry(mode, scale, modeChanged);
     lastMode = mode;
     lastScale = scale;
     lastRightBumper = rightPressed;
@@ -200,31 +202,31 @@ public class RobotContainer {
   }
 
   /** One-time dashboard entries that do not change at runtime. */
-  private void publishStaticTelemetry() {
-    SmartDashboard.putNumber("Drive/MaxSpeedMps", MaxSpeed);
-    SmartDashboard.putNumber("Drive/MaxAngularRateRadPerSec", MaxAngularRate);
-  }
+  // private void publishStaticTelemetry() {
+  //   SmartDashboard.putNumber("Drive/MaxSpeedMps", MaxSpeed);
+  //   SmartDashboard.putNumber("Drive/MaxAngularRateRadPerSec", MaxAngularRate);
+  // }
 
-  /** Live driver-focused telemetry for quick debugging and mode awareness. */
-  private void pushDriverTelemetry(String mode, double scale, boolean publishModeScale) {
-    if (publishModeScale) {
-      SmartDashboard.putString("Drive/SpeedMode", mode);
-      SmartDashboard.putNumber("Drive/SpeedScale", scale);
-    }
-    SmartDashboard.putNumber("Joystick/LeftX", joyLeftX());
-    SmartDashboard.putNumber("Joystick/LeftY", joyLeftY());
-    SmartDashboard.putNumber("Joystick/RightX", joyRightX());
+  // /** Live driver-focused telemetry for quick debugging and mode awareness. */
+   //private void pushDriverTelemetry(String mode, double scale, boolean publishModeScale) {
+  //   if (publishModeScale) {
+  //     SmartDashboard.putString("Drive/SpeedMode", mode);
+  //     SmartDashboard.putNumber("Drive/SpeedScale", scale);
+  //}
+  //   SmartDashboard.putNumber("Joystick/LeftX", joyLeftX());
+  //   SmartDashboard.putNumber("Joystick/LeftY", joyLeftY());
+  //   SmartDashboard.putNumber("Joystick/RightX", joyRightX());
 
-    var state = drivetrain.getState();
-    if (state != null) {
-      SmartDashboard.putNumber("Drive/PoseX", state.Pose.getX());
-      SmartDashboard.putNumber("Drive/PoseY", state.Pose.getY());
-      SmartDashboard.putNumber("Drive/HeadingDeg", state.Pose.getRotation().getDegrees());
-      SmartDashboard.putNumber("Drive/MeasuredVx", state.Speeds.vxMetersPerSecond);
-      SmartDashboard.putNumber("Drive/MeasuredVy", state.Speeds.vyMetersPerSecond);
-      SmartDashboard.putNumber("Drive/MeasuredOmega", state.Speeds.omegaRadiansPerSecond);
-    }
-  }
+  //   var state = drivetrain.getState();
+  //   if (state != null) {
+  //     SmartDashboard.putNumber("Drive/PoseX", state.Pose.getX());
+  //     SmartDashboard.putNumber("Drive/PoseY", state.Pose.getY());
+  //     SmartDashboard.putNumber("Drive/HeadingDeg", state.Pose.getRotation().getDegrees());
+  //     SmartDashboard.putNumber("Drive/MeasuredVx", state.Speeds.vxMetersPerSecond);
+  //     SmartDashboard.putNumber("Drive/MeasuredVy", state.Speeds.vyMetersPerSecond);
+  //     SmartDashboard.putNumber("Drive/MeasuredOmega", state.Speeds.omegaRadiansPerSecond);
+  //   }
+  // }
 
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.

@@ -2,8 +2,9 @@
 
 // import edu.wpi.first.wpilibj2.command.Command;
 // import frc.robot.subsystems.CommandSwerveDrivetrain;
-// import frc.robot.subsystems.Limelight;
+// import main.java.frc.robot.subsystems.Limelight2;
 // import com.ctre.phoenix6.swerve.SwerveRequest;
+// import edu.wpi.first.math.MathUtil;
 
 // /**
 //  * Faces the currently seen AprilTag by driving rotation to reduce Limelight tx to zero.
@@ -14,37 +15,38 @@
 //   private static final double kMaxRotRadPerSec = Math.toRadians(2.5);
 
 //   private final CommandSwerveDrivetrain drivetrain;
-//   private final Limelight limelight;
+//   private final Limelight2 lime;
 
 //   private final SwerveRequest.RobotCentric request = new SwerveRequest.RobotCentric();
+//   double radPerS = 0.0;
 
-//   public FaceAprilTag(CommandSwerveDrivetrain drivetrain, Limelight limelight) {
-//     this.drivetrain = drivetrain;
-//     this.limelight = limelight;
-//     addRequirements(drivetrain, limelight);
+//   public FaceAprilTag(CommandSwerveDrivetrain drive, Limelight2 limelight) {
+//     drivetrain = drive;
+//     lime = limelight;
+//     addRequirements(drivetrain, lime);
+//   }
+//   // Called when the command is initially scheduled.
+//   @Override
+//   public void initialize() {
+//     drivetrain.setControl(request.withVelocityX(0).withVelocityY(0).withRotationalRate(0));
+    
 //   }
 
+//   // Called every time the scheduler runs while the command is scheduled.
 //   @Override
 //   public void execute() {
-//     if (!limelight.hasTarget()) {
-//       // No target -> stop rotation to avoid hunting noise.
-//       drivetrain.setControl(request.withVelocityX(0).withVelocityY(0).withRotationalRate(0));
-//       return;
-//     }
-//     double errorDeg = limelight.getTx();
-//     double outputRadPerSec = kP * Math.toRadians(errorDeg);
-//     outputRadPerSec = Math.max(-kMaxRotRadPerSec, Math.min(kMaxRotRadPerSec, outputRadPerSec));
-//     drivetrain.setControl(request.withVelocityX(0).withVelocityY(0).withRotationalRate(outputRadPerSec));
+   
 //   }
 
-//   @Override
-//   public boolean isFinished() {
-//     return false; // run while held
-//   }
-
+//   // Called once the command ends or is interrupted.
 //   @Override
 //   public void end(boolean interrupted) {
-//     // Stop motion when the command ends.
-//     drivetrain.setControl(request.withVelocityX(0).withVelocityY(0).withRotationalRate(0));
+    
+//   }
+
+//   // Returns true when the command should end.
+//   @Override
+//   public boolean isFinished() {
+    
 //   }
 // }

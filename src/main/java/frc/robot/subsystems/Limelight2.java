@@ -16,13 +16,13 @@ import frc.robot.LimelightHelpers;
 
 public class Limelight2 extends SubsystemBase{
     NetworkTable table2;
-    double x, y, area, distX, distY,distZ;
+    double x, y, area, distX, distY, distZ, angleTargetRadians;
     NetworkTableEntry tx, ty, ta;
     Pose3d targetPose, botPose;
-    Rotation3d botRotation, targetRotation;
+    Rotation3d targetRotation;
     
     public Limelight2(){
-        table2 = NetworkTableInstance.getDefault().getTable("limelight");
+        table2 = NetworkTableInstance.getDefault().getTable("limelight-lime");
         tx = table2.getEntry("tx");
         ty = table2.getEntry("ty");
         ta = table2.getEntry("ta");
@@ -34,20 +34,24 @@ public class Limelight2 extends SubsystemBase{
         y = ty.getDouble(0.0);
         area = ta.getDouble(0.0);
 
-        targetPose = LimelightHelpers.getTargetPose3d_RobotSpace("limelight");
+        targetPose = LimelightHelpers.getTargetPose3d_RobotSpace("limelight-lime");
 
         distX = targetPose.getX();
         distY = targetPose.getY();
         distZ = targetPose.getZ();
+
+        targetRotation = targetPose.getRotation();
+        angleTargetRadians = targetRotation.getAngle();
     }
     public void updateDashboard(){
         //post to smart dashboard periodically
-        SmartDashboard.putNumber("Limelight2X", x);
-        SmartDashboard.putNumber("Limelight2Y", y);
+        SmartDashboard.putNumber("Limelight2XDegrees", x);
+        SmartDashboard.putNumber("Limelight2YDegrees", y);
         SmartDashboard.putNumber("Limelight2Area", area);
         SmartDashboard.putNumber("Limelight2DistanceX", distX);
         SmartDashboard.putNumber("Limelight2DistanceY", distY);
         SmartDashboard.putNumber("Limelight2DistanceZ", distZ);
+        SmartDashboard.putNumber("Limelight2TargetYawRadians", angleTargetRadians);
     }
     @Override
     public void periodic(){
