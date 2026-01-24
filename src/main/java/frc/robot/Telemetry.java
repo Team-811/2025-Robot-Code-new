@@ -43,7 +43,7 @@ public class Telemetry {
         SignalLogger.start();
         // Publish Mechanism2d widgets once to avoid re-sending sendables every loop.
         for (int i = 0; i < MODULE_COUNT; i++) {
-            SmartDashboard.putData("Module " + i, m_moduleMechanisms[i]);
+            //SmartDashboard.putData("Module " + i, m_moduleMechanisms[i]);
         }
     }
 

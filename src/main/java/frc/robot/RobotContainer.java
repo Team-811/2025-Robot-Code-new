@@ -113,10 +113,10 @@ public class RobotContainer {
       // Fall back to a safe chooser if PathPlanner assets are missing.
       chooser = new SendableChooser<>();
       chooser.setDefaultOption("Do Nothing", new InstantCommand());
-      SmartDashboard.putString("autoChooser/Error", "PathPlanner chooser failed: " + ex.getMessage());
+      //.putString("autoChooser/Error", "PathPlanner chooser failed: " + ex.getMessage());
     }
     autoChooser = chooser;
-    SmartDashboard.putData("autoChooser", autoChooser);
+    //SmartDashboard.putData("autoChooser", autoChooser);
   }
 
   /** Define driver -> command mappings. */
