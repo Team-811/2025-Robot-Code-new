@@ -134,11 +134,12 @@ public class RobotContainer {
 
     // Vision-assisted align/target commands.
     Rotation2d target = new Rotation2d(Limelight2.getAngleTargetRadians());
-    drivetrain.applyRequest(() -> turn
-      .withVelocityX(0)
-      .withVelocityY(0)
-      .withTargetDirection(target));
-
+    driverController.b().whileTrue(
+      drivetrain.applyRequest(() -> turn
+        .withVelocityX(0)
+        .withVelocityY(0)
+        .withTargetDirection(target))
+    );
     // SysId bindings to characterize drivetrain when requested.
     driverController.start().and(driverController.y())
         .whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
