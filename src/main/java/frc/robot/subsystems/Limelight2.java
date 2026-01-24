@@ -16,7 +16,7 @@ import frc.robot.LimelightHelpers;
 
 public class Limelight2 extends SubsystemBase{
     NetworkTable table2;
-    double x, y, area, distX, distY, distZ, angleTargetRadians, v;
+    static double x, y, area, distX, distY, distZ, angleTargetRadians, v;
     NetworkTableEntry tx, ty, ta, tv;
     Pose3d targetPose, botPose;
     Rotation3d targetRotation;
@@ -60,5 +60,12 @@ public class Limelight2 extends SubsystemBase{
     public void periodic(){
         updateValues();
         updateDashboard();
+    }
+
+    public static double getDistZ(){
+        return distZ;
+    }
+    public static double getAngleTargetRadians(){
+        return angleTargetRadians;
     }
 }

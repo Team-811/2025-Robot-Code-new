@@ -56,6 +56,7 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import com.ctre.phoenix6.swerve.SwerveRequest.RobotCentric;
+import edu.wpi.first.math.geometry.Rotation2d;
 import static edu.wpi.first.units.Units.*;
 public class RobotContainer {
 
@@ -69,6 +70,8 @@ public class RobotContainer {
       .withDeadband(MaxSpeed * 0.1)
       .withRotationalDeadband(MaxAngularRate * 0.1)
       .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
+
+  private final SwerveRequest.FieldCentricFacingAngle turn = new SwerveRequest.FieldCentricFacingAngle();
 
   private final Telemetry logger = new Telemetry(MaxSpeed);
 
@@ -130,6 +133,11 @@ public class RobotContainer {
                     .withRotationalRate(slewLimRote.calculate(-joyRightX()) * MaxAngularRate)));
 
     // Vision-assisted align/target commands.
+    Rotation2d target = new Rotation2d(Limelight2.getAngleTargetRadians());
+    drivetrain.applyRequest(() -> turn
+      .withVelocityX(0)
+      .withVelocityY(0)
+      .withTargetDirection(target));
 
     // SysId bindings to characterize drivetrain when requested.
     driverController.start().and(driverController.y())
