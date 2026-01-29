@@ -37,6 +37,7 @@ package frc.robot;
  * - Seeds field-centric heading at startup and registers drivetrain telemetry streaming.
  */
 import frc.robot.Constants.OperatorConstants;
+import frc.robot.commands.FaceAprilTag;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 // import main.java.frc.robot.commands.stopMOVING;
@@ -71,8 +72,9 @@ public class RobotContainer {
       .withRotationalDeadband(MaxAngularRate * 0.1)
       .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
-  private final SwerveRequest.FieldCentricFacingAngle turn = new SwerveRequest.FieldCentricFacingAngle();
-
+  private final RobotCentric turn = new SwerveRequest.RobotCentric()
+    .withDeadband(MaxSpeed*0.05).withRotationalDeadband(MaxAngularRate*0.1)
+    .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
   private final Telemetry logger = new Telemetry(MaxSpeed);
 
   // Slew limiters tame acceleration in each axis/rotation to keep the robot smooth.
@@ -133,13 +135,8 @@ public class RobotContainer {
                     .withRotationalRate(slewLimRote.calculate(-joyRightX()) * MaxAngularRate)));
 
     // Vision-assisted align/target commands.
-    Rotation2d target = new Rotation2d(Limelight2.getAngleTargetRadians());
-    driverController.b().whileTrue(
-      drivetrain.applyRequest(() -> turn
-        .withVelocityX(0)
-        .withVelocityY(0)
-        .withTargetDirection(target))
-    );
+    driverController.b().onTrue(new FaceAprilTag(drivetrain, 90));
+    
     // SysId bindings to characterize drivetrain when requested.
     driverController.start().and(driverController.y())
         .whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));

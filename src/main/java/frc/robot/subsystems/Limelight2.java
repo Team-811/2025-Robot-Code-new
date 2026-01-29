@@ -16,10 +16,11 @@ import frc.robot.LimelightHelpers;
 
 public class Limelight2 extends SubsystemBase{
     NetworkTable table2;
-    static double x, y, area, distX, distY, distZ, angleTargetRadians, v;
+    static double x, y, area, distX, distY, distZ, angleTargetRadians, v, robotYaw;
+    int fiducialID;
     NetworkTableEntry tx, ty, ta, tv;
     Pose3d targetPose, botPose;
-    Rotation3d targetRotation;
+    Rotation3d targetRotation, botRotation;
     
     public Limelight2(){
         table2 = NetworkTableInstance.getDefault().getTable("limelight-lime");
@@ -37,13 +38,18 @@ public class Limelight2 extends SubsystemBase{
         v = tv.getDouble(0.0);
 
         targetPose = LimelightHelpers.getTargetPose3d_RobotSpace("limelight-lime");
-
         distX = targetPose.getX();
         distY = targetPose.getY();
         distZ = targetPose.getZ();
 
+        botPose = LimelightHelpers.getBotPose3d_wpiBlue("limelight-lime");
+        botRotation = botPose.getRotation();
+        robotYaw = botRotation.getZ();
+
         targetRotation = targetPose.getRotation();
         angleTargetRadians = targetRotation.getZ();
+
+        fiducialID = (int)LimelightHelpers.getFiducialID("limelight-lime");
     }
     public void updateDashboard(){
         //post to smart dashboard periodically
@@ -65,7 +71,16 @@ public class Limelight2 extends SubsystemBase{
     public static double getDistZ(){
         return distZ;
     }
+
     public static double getAngleTargetRadians(){
         return angleTargetRadians;
+    }
+
+    public static double getRobotYaw(){
+        return robotYaw;
+    }
+
+    public static double getTV(){
+        return v;
     }
 }
