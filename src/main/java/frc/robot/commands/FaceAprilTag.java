@@ -24,7 +24,7 @@ public class FaceAprilTag extends Command {
   public FaceAprilTag(CommandSwerveDrivetrain drivetrain, double targetAngle) {
     myDrivetrain = drivetrain;
     myTargetAngle = targetAngle;
-    yawPID = new PIDController(1.0, 0, 0.3);
+    yawPID = new PIDController(1.0, 0, 0.5);
     yawPID.enableContinuousInput(-180.0, 180.0);
     yawPID.setTolerance(2.0);
     addRequirements(drivetrain);
@@ -40,9 +40,11 @@ public class FaceAprilTag extends Command {
   public void execute() {
     double currentYaw = Units.radiansToDegrees(Limelight2.getRobotYaw());
     double omega = yawPID.calculate(currentYaw);
-    omega = MathUtil.clamp(omega, -Math.PI, Math.PI);
+    System.out.println(omega);
+    omega = MathUtil.clamp(Units.degreesToRadians(omega), -Math.PI, Math.PI);
+    System.out.println(omega);
 
-    myDrivetrain.setControl(driveRequest.withVelocityX(0).withVelocityY(0).withRotationalRate(omega/8));
+    myDrivetrain.setControl(driveRequest.withVelocityX(0).withVelocityY(0).withRotationalRate(omega));
   }
 
   // Called once the command ends or is interrupted.
