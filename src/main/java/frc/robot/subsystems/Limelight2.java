@@ -7,6 +7,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.util.Units;
 
 import frc.robot.LimelightHelpers;
 
@@ -74,6 +75,10 @@ public class Limelight2 extends SubsystemBase{
 
     public static double getAngleTargetRadians(){
         return angleTargetRadians;
+    }
+
+    public static double getAngleTargetDegrees(){
+        return Units.radiansToDegrees(angleTargetRadians);
     }
 
     public static double getRobotYaw(){

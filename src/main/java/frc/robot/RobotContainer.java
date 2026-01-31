@@ -135,7 +135,7 @@ public class RobotContainer {
                     .withRotationalRate(slewLimRote.calculate(-joyRightX()) * MaxAngularRate)));
 
     // Vision-assisted align/target commands.
-    driverController.b().onTrue(new FaceAprilTag(drivetrain, 90));
+    driverController.b().onTrue(new FaceAprilTag(drivetrain, Limelight2.getAngleTargetDegrees()));
     
     // SysId bindings to characterize drivetrain when requested.
     driverController.start().and(driverController.y())

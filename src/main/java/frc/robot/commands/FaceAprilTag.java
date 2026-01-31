@@ -19,12 +19,14 @@ public class FaceAprilTag extends Command {
   private final double myTargetAngle;
   private final PIDController yawPID;
   private final SwerveRequest.FieldCentric driveRequest = new SwerveRequest.FieldCentric();
+  double yawError;
+  boolean end = false;
 
 
   public FaceAprilTag(CommandSwerveDrivetrain drivetrain, double targetAngle) {
     myDrivetrain = drivetrain;
     myTargetAngle = targetAngle;
-    yawPID = new PIDController(1.0, 0, 0.5);
+    yawPID = new PIDController(1.2, 0, 0.15);
     yawPID.enableContinuousInput(-180.0, 180.0);
     yawPID.setTolerance(2.0);
     addRequirements(drivetrain);
@@ -40,9 +42,18 @@ public class FaceAprilTag extends Command {
   public void execute() {
     double currentYaw = Units.radiansToDegrees(Limelight2.getRobotYaw());
     double omega = yawPID.calculate(currentYaw);
-    System.out.println(omega);
-    omega = MathUtil.clamp(Units.degreesToRadians(omega), -Math.PI, Math.PI);
-    System.out.println(omega);
+    System.out.println("pre-clamp omega "+omega);
+    omega = Units.degreesToRadians(omega);
+    omega = MathUtil.clamp(omega, -Math.PI, Math.PI);
+    yawError = yawPID.getError();
+    System.out.println("Yaw error: " + yawError);
+    System.out.println("current omega " +omega);
+    System.out.println("Yaw deg: " + currentYaw);
+
+    if(yawError < 10.0){
+      omega = 0;
+      end = true;
+    }
 
     myDrivetrain.setControl(driveRequest.withVelocityX(0).withVelocityY(0).withRotationalRate(omega));
   }
@@ -51,11 +62,15 @@ public class FaceAprilTag extends Command {
   @Override
   public void end(boolean interrupted) {
     myDrivetrain.setControl(driveRequest.withVelocityX(0).withVelocityY(0).withRotationalRate(0));
+    end = false;
   }
 
   // Returns true when the command should end.
   @Override
   public boolean isFinished() {
-    return yawPID.atSetpoint();
+    if(yawPID.atSetpoint()){
+      end = true;
+    }
+    return end;
   }
 }
