@@ -19,8 +19,9 @@ public class FaceAprilTag extends Command {
   private final double myTargetAngle;
   private final PIDController yawPID;
   private final SwerveRequest.FieldCentric driveRequest = new SwerveRequest.FieldCentric();
-  double yawError;
-  boolean end = false;
+  private double yawError;
+  private boolean end = false;
+  private double omega, currentYaw;
 
 
   public FaceAprilTag(CommandSwerveDrivetrain drivetrain, double targetAngle) {
@@ -40,8 +41,9 @@ public class FaceAprilTag extends Command {
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    double currentYaw = Units.radiansToDegrees(Limelight2.getRobotYaw());
-    double omega = yawPID.calculate(currentYaw);
+    System.out.println("////Next Iteration////");
+    currentYaw = Units.radiansToDegrees(Limelight2.getRobotYaw());
+    omega = yawPID.calculate(currentYaw);
     System.out.println("pre-clamp omega "+omega);
     omega = Units.degreesToRadians(omega);
     omega = MathUtil.clamp(omega, -Math.PI, Math.PI);
@@ -49,8 +51,9 @@ public class FaceAprilTag extends Command {
     System.out.println("Yaw error: " + yawError);
     System.out.println("current omega " +omega);
     System.out.println("Yaw deg: " + currentYaw);
+    System.out.println("Target Yaw: "+myTargetAngle);
 
-    if(yawError < 10.0){
+    if(Math.abs(yawError) < 5.0){
       omega = 0;
       end = true;
     }
@@ -62,6 +65,8 @@ public class FaceAprilTag extends Command {
   @Override
   public void end(boolean interrupted) {
     myDrivetrain.setControl(driveRequest.withVelocityX(0).withVelocityY(0).withRotationalRate(0));
+    System.out.println("Yaw deg: " + currentYaw);
+    System.out.println("Target Yaw: "+myTargetAngle);
     end = false;
   }
 

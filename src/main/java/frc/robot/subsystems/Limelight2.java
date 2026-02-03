@@ -78,7 +78,7 @@ public class Limelight2 extends SubsystemBase{
     }
 
     public static double getAngleTargetDegrees(){
-        return Units.radiansToDegrees(angleTargetRadians);
+        return x;
     }
 
     public static double getRobotYaw(){
