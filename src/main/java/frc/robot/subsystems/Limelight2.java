@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.util.Units;
+import frc.robot.LimelightHelpers.IMUData;
 
 import frc.robot.LimelightHelpers;
 
@@ -17,11 +18,12 @@ import frc.robot.LimelightHelpers;
 
 public class Limelight2 extends SubsystemBase{
     NetworkTable table2;
-    static double x, y, area, distX, distY, distZ, angleTargetRadians, v, robotYaw;
+    static double x, y, area, distX, distY, distZ, angleTargetRadians, v, robotYaw, yaw;
     int fiducialID;
     NetworkTableEntry tx, ty, ta, tv;
     Pose3d targetPose, botPose;
     Rotation3d targetRotation, botRotation;
+    LimelightHelpers.IMUData imuData;
     
     public Limelight2(){
         table2 = NetworkTableInstance.getDefault().getTable("limelight-lime");
@@ -33,7 +35,7 @@ public class Limelight2 extends SubsystemBase{
 
     public void updateValues(){
         //read values periodically
-        x = tx.getDouble(0.0);
+        x = tx.getDouble(6.0);
         y = ty.getDouble(0.0);
         area = ta.getDouble(0.0);
         v = tv.getDouble(0.0);
@@ -43,14 +45,13 @@ public class Limelight2 extends SubsystemBase{
         distY = targetPose.getY();
         distZ = targetPose.getZ();
 
-        botPose = LimelightHelpers.getBotPose3d_wpiBlue("limelight-lime");
-        botRotation = botPose.getRotation();
-        robotYaw = botRotation.getZ();
-
         targetRotation = targetPose.getRotation();
         angleTargetRadians = targetRotation.getZ();
 
         fiducialID = (int)LimelightHelpers.getFiducialID("limelight-lime");
+
+        imuData = LimelightHelpers.getIMUData("limelight-lime");
+        robotYaw = imuData.robotYaw;
     }
     public void updateDashboard(){
         //post to smart dashboard periodically
@@ -62,6 +63,7 @@ public class Limelight2 extends SubsystemBase{
         SmartDashboard.putNumber("Limelight2DistanceY", distY);
         SmartDashboard.putNumber("Limelight2DistanceZ", distZ);
         SmartDashboard.putNumber("Limelight2TargetYawRadians", angleTargetRadians);
+        SmartDashboard.putNumber("LL2CurrentYawDegrees", robotYaw);
     }
     @Override
     public void periodic(){
@@ -77,7 +79,10 @@ public class Limelight2 extends SubsystemBase{
         return angleTargetRadians;
     }
 
-    public static double getAngleTargetDegrees(){
+    public static double myGetTX(){
+        System.out.println("///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////");
+        System.out.println(x);
+        System.out.println("///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////");
         return x;
     }
 

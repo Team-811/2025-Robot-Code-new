@@ -16,17 +16,17 @@ import edu.wpi.first.math.controller.PIDController;
 public class FaceAprilTag extends Command {
 
   private final CommandSwerveDrivetrain myDrivetrain;
-  private final double myTargetAngle;
+  private double myTargetAngle;
   private final PIDController yawPID;
   private final SwerveRequest.FieldCentric driveRequest = new SwerveRequest.FieldCentric();
+  // private final SwerveRequest.RobotCentric driveRequest = new SwerveRequest.RobotCentric();
   private double yawError;
   private boolean end = false;
   private double omega, currentYaw;
 
 
-  public FaceAprilTag(CommandSwerveDrivetrain drivetrain, double targetAngle) {
+  public FaceAprilTag(CommandSwerveDrivetrain drivetrain) {
     myDrivetrain = drivetrain;
-    myTargetAngle = targetAngle;
     yawPID = new PIDController(1.2, 0, 0.15);
     yawPID.enableContinuousInput(-180.0, 180.0);
     yawPID.setTolerance(2.0);
@@ -35,6 +35,8 @@ public class FaceAprilTag extends Command {
   // Called when the command is initially scheduled.
   @Override
   public void initialize() {
+    yawPID.reset();
+    myTargetAngle = Limelight2.myGetTX();
     yawPID.setSetpoint(myTargetAngle);
   }
 
@@ -42,18 +44,20 @@ public class FaceAprilTag extends Command {
   @Override
   public void execute() {
     System.out.println("////Next Iteration////");
-    currentYaw = Units.radiansToDegrees(Limelight2.getRobotYaw());
+    currentYaw = Limelight2.getRobotYaw();
+
     omega = yawPID.calculate(currentYaw);
     System.out.println("pre-clamp omega "+omega);
     omega = Units.degreesToRadians(omega);
     omega = MathUtil.clamp(omega, -Math.PI, Math.PI);
+
     yawError = yawPID.getError();
     System.out.println("Yaw error: " + yawError);
     System.out.println("current omega " +omega);
     System.out.println("Yaw deg: " + currentYaw);
     System.out.println("Target Yaw: "+myTargetAngle);
 
-    if(Math.abs(yawError) < 5.0){
+    if(Math.abs(yawError) < 11.0){
       omega = 0;
       end = true;
     }
@@ -65,8 +69,6 @@ public class FaceAprilTag extends Command {
   @Override
   public void end(boolean interrupted) {
     myDrivetrain.setControl(driveRequest.withVelocityX(0).withVelocityY(0).withRotationalRate(0));
-    System.out.println("Yaw deg: " + currentYaw);
-    System.out.println("Target Yaw: "+myTargetAngle);
     end = false;
   }
 
