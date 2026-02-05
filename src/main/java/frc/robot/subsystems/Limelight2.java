@@ -26,7 +26,7 @@ public class Limelight2 extends SubsystemBase{
     LimelightHelpers.IMUData imuData;
     
     public Limelight2(){
-        table2 = NetworkTableInstance.getDefault().getTable("limelight-lime");
+        table2 = NetworkTableInstance.getDefault().getTable("limelight-shooter");
         tx = table2.getEntry("tx");
         ty = table2.getEntry("ty");
         ta = table2.getEntry("ta");
@@ -40,7 +40,7 @@ public class Limelight2 extends SubsystemBase{
         area = ta.getDouble(0.0);
         v = tv.getDouble(0.0);
 
-        targetPose = LimelightHelpers.getTargetPose3d_RobotSpace("limelight-lime");
+        targetPose = LimelightHelpers.getTargetPose3d_RobotSpace("limelight-shooter");
         distX = targetPose.getX();
         distY = targetPose.getY();
         distZ = targetPose.getZ();
@@ -48,9 +48,9 @@ public class Limelight2 extends SubsystemBase{
         targetRotation = targetPose.getRotation();
         angleTargetRadians = targetRotation.getZ();
 
-        fiducialID = (int)LimelightHelpers.getFiducialID("limelight-lime");
+        fiducialID = (int)LimelightHelpers.getFiducialID("limelight-shooter");
 
-        imuData = LimelightHelpers.getIMUData("limelight-lime");
+        imuData = LimelightHelpers.getIMUData("limelight-shooter");
         robotYaw = imuData.robotYaw;
     }
     public void updateDashboard(){
